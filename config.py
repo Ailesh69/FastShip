@@ -16,6 +16,7 @@ class DatabaseSettings(BaseSettings):
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
+    POSTGRES_TEST_DB :  str
     model_config = _base_config
     REDIS_HOST: str
     REDIS_PORT: int
@@ -23,8 +24,14 @@ class DatabaseSettings(BaseSettings):
     @property
     def POSTGRES_URL(self):
         return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
-    def REDIS_URL(self,db):
+
+    @property
+    def POSTGRES_TEST_URL(self):
+        return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_TEST_DB}"
+
+    def REDIS_URL(self, db):
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{db}"
+
 
 class SecuritySettings(BaseSettings):
     JWT_SECRET: str
@@ -43,9 +50,9 @@ class NotificationsSettings(BaseSettings):
     MAIL_SSL_TLS: bool = False
     USE_CREDENTIALS: bool = True
     VALIDATE_CERTS: bool = True
-    TWILIO_SID : str 
-    TWILIO_AUTH_TOKEN : str  
-    TWILIO_PHONE_NUMBER : str 
+    TWILIO_SID: str
+    TWILIO_AUTH_TOKEN: str
+    TWILIO_PHONE_NUMBER: str
     model_config = _base_config
 
 
