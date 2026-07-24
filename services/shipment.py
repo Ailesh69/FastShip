@@ -31,7 +31,7 @@ class ShipmentService(BaseService):
         self.event_service = event_service
 
     async def get(self, id: UUID) -> Shipment | None:
-        shipment = await self.get(id)
+        shipment = await self._get(id)
         if not shipment:
             raise EntityNotFound()
         return shipment

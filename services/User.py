@@ -9,7 +9,7 @@ from services.Base import BaseService
 from schemas.User import User
 from utils import generate_access_token, generate_url_safe_token, decode_url_safe_token
 
-pwd_ctx = CryptContext(schemes=["bcrypt"], bcrypt__truncate_error=False)
+pwd_ctx = CryptContext(schemes=["bcrypt"])
 
 
 class UserService(BaseService):
