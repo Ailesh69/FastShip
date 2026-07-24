@@ -1,0 +1,14 @@
+import pytest
+from fastapi.testclient import TestClient
+from main import app
+
+
+@pytest.fixture(scope='session')
+def client():
+    return TestClient(app)
+
+@pytest.fixture(scope="session",autouse=True)
+def setup_end():
+    print("Starting testss...")
+    yield 
+    print("Finished>>>>>>")
