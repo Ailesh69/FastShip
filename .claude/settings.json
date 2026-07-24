@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Start-Process powershell -ArgumentList '-NoProfile', '-Command', 'cd C:\\\\Users\\\\ailes\\\\Desktop\\\\FastApi; uvicorn main:app --reload --port 8000 2>&1 | Tee-Object -FilePath server.log' -WindowStyle Normal)",
+      "Bash(pkill -f \"uvicorn main:app\")"
+    ]
+  }
+}

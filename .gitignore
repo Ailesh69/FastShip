@@ -1,0 +1,5 @@
+﻿.wsl-venv/
+__pycache__/
+*.pyc
+*.log
+.venv/

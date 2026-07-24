@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Submit Review – FastShip</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f4f6f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .card {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+            padding: 40px 36px;
+            max-width: 460px;
+            width: 100%;
+        }
+        .logo {
+            font-size: 22px;
+            font-weight: 800;
+            color: #1a73e8;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        h2 {
+            font-size: 20px;
+            color: #222;
+            margin-bottom: 6px;
+        }
+        p.subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 28px;
+        }
+        label.section-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 10px;
+        }
+        .rating-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+        .rating-group input[type="radio"] { display: none; }
+        .rating-group label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 2px solid #d0d5dd;
+            font-size: 16px;
+            font-weight: 700;
+            color: #555;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .rating-group input[type="radio"]:checked + label {
+            background: #1a73e8;
+            border-color: #1a73e8;
+            color: #fff;
+        }
+        .rating-group label:hover {
+            border-color: #1a73e8;
+            color: #1a73e8;
+        }
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d0d5dd;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #333;
+            resize: vertical;
+            margin-bottom: 24px;
+            font-family: inherit;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #1a73e8;
+        }
+        button {
+            width: 100%;
+            padding: 13px;
+            background: #1a73e8;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background: #1558b0; }
+        .error { color: #d93025; font-size: 13px; margin-top: -18px; margin-bottom: 16px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="logo">FASTSHIP</div>
+        <h2>Rate Your Delivery</h2>
+        <p class="subtitle">How was your experience? Your feedback helps us improve.</p>
+
+        <form method="POST" action="{{ review_url }}" onsubmit="return validate()">
+            <label class="section-label">Your Rating <span style="color:#d93025">*</span></label>
+            <div class="rating-group">
+                {% for i in range(1, 6) %}
+                <input type="radio" name="rating" id="r{{ i }}" value="{{ i }}" {% if i == 5 %}{% endif %} required />
+                <label for="r{{ i }}">{{ i }}</label>
+                {% endfor %}
+            </div>
+            <p class="error" id="rating-error">Please select a rating before submitting.</p>
+
+            <label class="section-label" for="comment">Feedback <span style="color:#aaa; font-weight:400">(optional)</span></label>
+            <textarea name="comment" id="comment" rows="3" placeholder="Tell us about your experience..."></textarea>
+
+            <button type="submit">Submit Review</button>
+        </form>
+    </div>
+    <script>
+        function validate() {
+            const selected = document.querySelector('input[name="rating"]:checked');
+            const err = document.getElementById('rating-error');
+            if (!selected) {
+                err.style.display = 'block';
+                return false;
+            }
+            err.style.display = 'none';
+            return true;
+        }
+    </script>
+</body>
+</html>
