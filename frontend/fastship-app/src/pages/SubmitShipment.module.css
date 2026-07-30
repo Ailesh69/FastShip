@@ -1,0 +1,182 @@
+/* =========================================================
+   SUBMIT SHIPMENT — page-scoped styles (CSS Module, hashed at build).
+   Reads site tokens from :root; defines nothing globally.
+   ========================================================= */
+
+.panel {
+  width: 100%;
+  max-width: 620px;
+  border: 2px solid var(--color-fs-green);
+  background: rgba(9, 22, 20, 0.72);
+  box-shadow:
+    0 0 12px rgba(125, 232, 126, 0.38),
+    0 0 32px rgba(125, 232, 126, 0.16),
+    inset 0 0 30px rgba(125, 232, 126, 0.05);
+}
+
+.sectionHead {
+  margin: 0;
+  padding: 14px 16px;
+  text-align: center;
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1;
+  color: #bfe8c6;
+  text-shadow:
+    0 0 8px rgba(125, 232, 126, 0.85),
+    0 0 20px rgba(125, 232, 126, 0.4);
+  border-bottom: 2px solid rgba(125, 232, 126, 0.55);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  cursor: text;
+}
+
+.row + .row {
+  border-top: 1px solid rgba(34, 211, 238, 0.22);
+}
+
+/* Sized off the longest label — "CLIENT PHONE (OPTIONAL):" is 24 chars, and
+   Press Start 2P advances exactly 1em per character, so 9px x 24 = 216px. */
+.label {
+  flex-shrink: 0;
+  white-space: nowrap;
+  width: 224px;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  line-height: 1.4;
+  color: #bde9e8;
+}
+
+.well {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  height: 32px;
+  border: 2px solid #5fc9b4;
+  background: rgba(10, 26, 32, 0.8);
+  box-shadow: 0 0 6px rgba(95, 201, 180, 0.32);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.row:focus-within .well {
+  border-color: #6ff0e6;
+  box-shadow:
+    0 0 10px rgba(111, 240, 230, 0.75),
+    0 0 22px rgba(111, 240, 230, 0.3);
+}
+
+.input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  outline: none;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  line-height: 1.6;
+  color: #d8f4ff;
+  caret-color: #6ff0e6;
+}
+
+.input::placeholder {
+  color: rgba(216, 244, 255, 0.32);
+}
+
+/* strip the spinner from the weight field so it keeps the blocky look */
+.input[type='number'] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.input[type='number']::-webkit-outer-spin-button,
+.input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.error {
+  margin: 6px 0 0 224px;
+  padding-left: 10px;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1.4;
+  color: #ff7a5c;
+  text-shadow: 0 0 6px rgba(255, 122, 92, 0.6);
+}
+
+/* pixel confirmation panel, shown in place of a browser alert */
+.confirm {
+  margin: 18px auto 0;
+  max-width: 620px;
+  padding: 14px 16px;
+  text-align: center;
+  border: 2px solid var(--color-fs-green);
+  background: rgba(10, 30, 24, 0.75);
+  color: #cef0d1;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  line-height: 1.7;
+  text-shadow: 0 0 8px rgba(125, 232, 126, 0.7);
+  box-shadow:
+    0 0 12px rgba(125, 232, 126, 0.5),
+    0 0 30px rgba(125, 232, 126, 0.22);
+}
+
+.submitWrap {
+  display: flex;
+  justify-content: center;
+}
+
+.submitBtn {
+  cursor: pointer;
+  padding: 16px 30px;
+  font-family: var(--font-pixel);
+  font-size: 15px;
+  line-height: 1;
+  border: 2px solid var(--color-fs-green);
+  background: rgba(10, 30, 24, 0.55);
+  color: #cef0d1;
+  text-shadow: 0 0 8px rgba(127, 214, 163, 0.75);
+  box-shadow:
+    0 0 10px rgba(125, 232, 126, 0.45),
+    0 0 26px rgba(125, 232, 126, 0.22),
+    inset 0 0 18px rgba(125, 232, 126, 0.1);
+  transition:
+    box-shadow 0.16s ease,
+    border-color 0.16s ease;
+}
+
+.submitBtn:hover,
+.submitBtn:focus-visible {
+  border-color: #a8f5a9;
+  box-shadow:
+    0 0 14px rgba(125, 232, 126, 0.8),
+    0 0 38px rgba(125, 232, 126, 0.4),
+    inset 0 0 22px rgba(125, 232, 126, 0.16);
+}
+
+@media (max-width: 640px) {
+  .label {
+    width: 130px;
+  }
+
+  .error {
+    margin-left: 130px;
+  }
+}

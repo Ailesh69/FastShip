@@ -1,0 +1,82 @@
+/* =========================================================
+   ZIP CHIP INPUT — component-scoped styles (CSS Module, hashed at build).
+   Reads site tokens from :root; defines nothing globally.
+   ========================================================= */
+
+.wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 5px 8px;
+  border: 2px solid #5fc9b4;
+  background: rgba(10, 26, 32, 0.8);
+  box-shadow: 0 0 6px rgba(95, 201, 180, 0.32);
+  cursor: text;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.wrap:focus-within {
+  border-color: #6ff0e6;
+  box-shadow:
+    0 0 10px rgba(111, 240, 230, 0.75),
+    0 0 22px rgba(111, 240, 230, 0.3);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border: 1px solid var(--color-fs-teal);
+  background: rgba(34, 211, 238, 0.14);
+  color: #d8f4ff;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  line-height: 1;
+}
+
+.remove {
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  color: #ff9b83;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  line-height: 1;
+  transition: color 0.15s ease;
+}
+
+.remove:hover,
+.remove:focus-visible {
+  color: #ffd2c6;
+}
+
+.entry {
+  flex: 1;
+  min-width: 70px;
+  border: 0;
+  background: transparent;
+  outline: none;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  line-height: 1.6;
+  color: #d8f4ff;
+  caret-color: #6ff0e6;
+}
+
+.entry::placeholder {
+  color: rgba(216, 244, 255, 0.32);
+}
+
+.hint {
+  margin: 6px 0 0;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1.5;
+  color: rgba(189, 233, 232, 0.6);
+}

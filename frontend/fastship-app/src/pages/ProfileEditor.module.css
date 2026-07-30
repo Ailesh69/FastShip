@@ -1,0 +1,303 @@
+/* =========================================================
+   USER PROFILE EDITOR — PAGE-SCOPED STYLES
+   A CSS Module: every class below is hashed at build time, so nothing here
+   can reach any other page. No global stylesheet is touched by this file.
+   Site tokens (--color-fs-*, --font-pixel) are READ from :root, never edited.
+   ========================================================= */
+
+/* ---------------- avatar + curved upload label ---------------- */
+
+.avatarBlock {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  flex-shrink: 0;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.avatarRing {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* dashed circle framing the photo */
+.ringPath {
+  fill: none;
+  stroke: var(--color-fs-teal);
+  stroke-width: 2;
+  stroke-dasharray: 6 7;
+  filter: drop-shadow(0 0 5px rgba(34, 211, 238, 0.75));
+  transition: stroke 0.16s ease;
+}
+
+/* "UPDATE PROFILE PHOTO" running around the top of the ring */
+.ringText {
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  letter-spacing: 2px;
+  fill: var(--color-fs-teal);
+  text-transform: uppercase;
+}
+
+.avatarBlock:hover .ringPath,
+.avatarBlock:focus-visible .ringPath {
+  stroke: #a8f5f0;
+}
+
+.avatarBlock:hover .ringText,
+.avatarBlock:focus-visible .ringText {
+  fill: #ffffff;
+}
+
+/* the photo itself stays a real image — only the frame is themed */
+.avatarPhoto {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 112px;
+  height: 112px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  object-fit: cover;
+  image-rendering: pixelated;
+  border: 2px solid rgba(34, 211, 238, 0.8);
+  box-shadow:
+    0 0 10px rgba(34, 211, 238, 0.5),
+    0 0 24px rgba(34, 211, 238, 0.22);
+}
+
+.hiddenFile {
+  display: none;
+}
+
+/* ---------------- form panel ---------------- */
+
+.panel {
+  width: 100%;
+  max-width: 900px;
+  border: 2px solid var(--color-fs-green);
+  background: rgba(9, 22, 20, 0.72);
+  box-shadow:
+    0 0 12px rgba(125, 232, 126, 0.38),
+    0 0 32px rgba(125, 232, 126, 0.16),
+    inset 0 0 30px rgba(125, 232, 126, 0.05);
+}
+
+/* two columns on top, split by a vertical rule */
+.topGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.colDivider {
+  border-left: 2px solid rgba(125, 232, 126, 0.55);
+}
+
+.sectionHead {
+  margin: 0;
+  padding: 14px 16px;
+  text-align: center;
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1;
+  color: #bfe8c6;
+  text-shadow:
+    0 0 8px rgba(125, 232, 126, 0.85),
+    0 0 20px rgba(125, 232, 126, 0.4);
+  border-bottom: 2px solid rgba(125, 232, 126, 0.55);
+}
+
+/* full-width rule between the columns block and delivery preferences */
+.sectionRule {
+  border-top: 2px solid rgba(125, 232, 126, 0.55);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  cursor: text;
+}
+
+.row + .row {
+  border-top: 1px solid rgba(34, 211, 238, 0.22);
+}
+
+/* Press Start 2P advances exactly 1em per character, so each label column is
+   sized off its LONGEST label at 9px and set nowrap — otherwise
+   "CONFIRM NEW PASSWORD:" (21 chars = 189px) wraps to two lines and the rows
+   go ragged. */
+.label {
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-family: var(--font-pixel);
+  font-size: 9px;
+  line-height: 1.4;
+  color: #bde9e8;
+}
+
+/* "EMAIL ADDRESS:" — 14 chars */
+.labelPersonal {
+  width: 134px;
+}
+
+/* "CONFIRM NEW PASSWORD:" — 21 chars */
+.labelSecurity {
+  width: 197px;
+}
+
+/* input wells — same treatment as the signup forms, scoped here */
+.well {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  height: 32px;
+  border: 2px solid #5fc9b4;
+  background: rgba(10, 26, 32, 0.8);
+  box-shadow: 0 0 6px rgba(95, 201, 180, 0.32);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.wellArea {
+  height: auto;
+  padding: 8px 10px;
+  align-items: stretch;
+}
+
+.row:focus-within .well {
+  border-color: #6ff0e6;
+  box-shadow:
+    0 0 10px rgba(111, 240, 230, 0.75),
+    0 0 22px rgba(111, 240, 230, 0.3);
+}
+
+.input,
+.textarea {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  outline: none;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  line-height: 1.6;
+  color: #d8f4ff;
+  caret-color: #6ff0e6;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 54px;
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: rgba(216, 244, 255, 0.32);
+}
+
+/* delivery preferences row stacks its label above on narrow widths */
+.addressRow {
+  align-items: flex-start;
+}
+
+/* "PRIMARY SHIPPING ADDRESS:" — 25 chars */
+.addressLabel {
+  width: 233px;
+  padding-top: 9px;
+}
+
+/* ---------------- actions ---------------- */
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 34px;
+}
+
+.actionBtn {
+  cursor: pointer;
+  padding: 16px 26px;
+  font-family: var(--font-pixel);
+  font-size: 15px;
+  line-height: 1;
+  transition:
+    box-shadow 0.16s ease,
+    border-color 0.16s ease;
+}
+
+/* SAVE — cyan */
+.save {
+  border: 2px solid var(--color-fs-teal);
+  background: rgba(14, 78, 87, 0.5);
+  color: #a9f2ff;
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.8);
+  box-shadow:
+    0 0 10px rgba(34, 211, 238, 0.5),
+    0 0 26px rgba(34, 211, 238, 0.26),
+    inset 0 0 18px rgba(34, 211, 238, 0.14);
+}
+
+.save:hover,
+.save:focus-visible {
+  border-color: #a8f5f0;
+  box-shadow:
+    0 0 14px rgba(34, 211, 238, 0.85),
+    0 0 38px rgba(34, 211, 238, 0.42),
+    inset 0 0 22px rgba(34, 211, 238, 0.2);
+}
+
+/* CANCEL — green */
+.cancel {
+  border: 2px solid var(--color-fs-green);
+  background: rgba(10, 30, 24, 0.55);
+  color: #cef0d1;
+  text-shadow: 0 0 8px rgba(127, 214, 163, 0.75);
+  box-shadow:
+    0 0 10px rgba(125, 232, 126, 0.45),
+    0 0 26px rgba(125, 232, 126, 0.22),
+    inset 0 0 18px rgba(125, 232, 126, 0.1);
+}
+
+.cancel:hover,
+.cancel:focus-visible {
+  border-color: #a8f5a9;
+  box-shadow:
+    0 0 14px rgba(125, 232, 126, 0.8),
+    0 0 38px rgba(125, 232, 126, 0.4),
+    inset 0 0 22px rgba(125, 232, 126, 0.16);
+}
+
+/* ---------------- narrow screens ---------------- */
+@media (max-width: 760px) {
+  .topGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .colDivider {
+    border-left: 0;
+    border-top: 2px solid rgba(125, 232, 126, 0.55);
+  }
+
+  .labelPersonal,
+  .labelSecurity,
+  .addressLabel {
+    width: 118px;
+  }
+}
