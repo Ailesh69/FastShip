@@ -29,6 +29,10 @@ tags_metadata = [
         "name": APITag.PARTNER,
         "description": "Delivery partner registration, login, and shipment delivery operations.",
     },
+    {
+        "name": APITag.CLIENT,
+        "description": "Client registration, login, and account management.",
+    },
 ]
 
 app = FastAPI(

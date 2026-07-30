@@ -4,3 +4,4 @@ class APITag(str,Enum):
     SHIPMENT = "Shipment"
     SELLER = "Seller"
     PARTNER = "Deliery Partner"
+    CLIENT = "Client"

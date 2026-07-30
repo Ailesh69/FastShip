@@ -1,0 +1,101 @@
+/* =========================================================
+   SELLER DASHBOARD — PAGE-SCOPED STYLES
+   A CSS Module: class names are hashed at build time, so nothing here can
+   reach another page. No global stylesheet is modified by this file.
+   Site tokens (--font-pixel, --font-term, --color-fs-*) are READ from :root,
+   never redefined.
+
+   The table shell itself reuses the GLOBAL .records-panel / .records-caption /
+   .records-head / .records-body classes already built for the Client
+   Dashboard, so the two tables stay visually identical. Only the seller-
+   specific bits live here.
+   ========================================================= */
+
+/* [SUBMIT NEW SHIPMENT] — cyan bracket button.
+   NOTE: this duplicates the cyan button treatment in ProfileEditor.module.css.
+   The DRY fix is a shared `.bracket-btn-cyan` in index.css, but that is a
+   global file and this task is scoped — flagged rather than edited. */
+.submitBtn {
+  cursor: pointer;
+  padding: 12px 18px;
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  line-height: 1;
+  border: 2px solid var(--color-fs-teal);
+  background: rgba(14, 78, 87, 0.5);
+  color: #a9f2ff;
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.8);
+  box-shadow:
+    0 0 10px rgba(34, 211, 238, 0.5),
+    0 0 26px rgba(34, 211, 238, 0.26),
+    inset 0 0 18px rgba(34, 211, 238, 0.14);
+  transition:
+    box-shadow 0.16s ease,
+    border-color 0.16s ease;
+}
+
+.submitBtn:hover,
+.submitBtn:focus-visible {
+  border-color: #a8f5f0;
+  box-shadow:
+    0 0 14px rgba(34, 211, 238, 0.85),
+    0 0 38px rgba(34, 211, 238, 0.42),
+    inset 0 0 22px rgba(34, 211, 238, 0.2);
+}
+
+/* Row data in VT323 — far more legible than Press Start 2P at table size.
+   Headers/buttons stay Press Start 2P via the global .records-head. */
+.dataCell {
+  font-family: var(--font-term);
+  font-size: 17px;
+  letter-spacing: 0.4px;
+}
+
+/* Status cell keeps its pixel icon beside VT323 text */
+.statusCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+/* Two stacked bracket links per row in the ACTIONS column */
+.actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.actionLink {
+  cursor: pointer;
+  border: 0;
+  background: none;
+  padding: 0;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1.5;
+  color: var(--color-fs-teal);
+  white-space: nowrap;
+  transition:
+    color 0.15s ease,
+    text-shadow 0.15s ease;
+}
+
+.actionLink:hover,
+.actionLink:focus-visible {
+  color: #ffffff;
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.85);
+}
+
+/* [CANCEL] keeps a destructive red/orange tint */
+.cancelLink {
+  color: #ff7a5c;
+}
+
+.cancelLink:hover,
+.cancelLink:focus-visible {
+  color: #ffd2c6;
+  text-shadow: 0 0 8px rgba(255, 122, 92, 0.9);
+}

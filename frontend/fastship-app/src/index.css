@@ -1,0 +1,957 @@
+@import 'tailwindcss';
+
+/* =========================================================
+   PIXEL FONTS — SELF-HOSTED
+   Served from /public/fonts so the site never depends on a runtime request
+   to fonts.googleapis.com. When that fetch is blocked (offline, DNS, firewall,
+   ad-blocker) every family silently falls back and the whole site renders in
+   the last fallback — plain monospace. Shipping the woff2 files removes that
+   entire failure mode.
+   Both faces are SIL Open Font License 1.1.
+   `font-display: block` — these are the design, not decoration, so a brief
+   invisible-text pause beats a flash of monospace.
+   ========================================================= */
+@font-face {
+  font-family: 'Press Start 2P';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('/fonts/press-start-2p-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'VT323';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('/fonts/vt323-latin.woff2') format('woff2');
+}
+
+/* =========================================================
+   DESIGN TOKENS
+   Registered under @theme so each one is available BOTH as a
+   plain CSS variable (var(--color-fs-green)) AND as a Tailwind
+   utility class (text-fs-gold, border-fs-teal, bg-fs-bg, ...).
+   ========================================================= */
+@theme {
+  --color-fs-bg: #0a1128; /* background base — solid dark navy, no gradient */
+  --color-fs-grid: #1e6f7a; /* perspective / rect grid lines (drawn at 50% alpha) */
+  --color-fs-green: #7de87e; /* primary green — SHOP ALL + START YOUR QUEST fills */
+  --color-fs-green-hot: #39ff14; /* pure neon green — accent grid lines + glows */
+  --color-fs-teal: #22d3ee; /* stat-box borders, PRESS START text, nav border */
+  --color-fs-logo: #2dd4bf; /* "FS" wordmark */
+  --color-fs-gold: #fbbf24; /* subtitle + star stat + CTA flank marks */
+  --color-fs-orange: #f97316; /* PRESS START dashed border + orange sprites */
+  --color-fs-ink: #e2e8f0; /* description paragraph */
+  --color-fs-rule: #3b82f6; /* footer divider rules */
+
+  --font-pixel: 'Press Start 2P', system-ui, monospace;
+  --font-term: 'VT323', 'Press Start 2P', monospace;
+}
+
+/* Layout rhythm shared between the background and the page content, so the
+   grid horizon always lines up with the bottom of the stat-card row. */
+:root {
+  --nav-h: 66px;
+  --horizon: 46%; /* horizon line — the floor grid exists only BELOW this */
+  --grid-cell: 40px;
+  --grid-line: rgba(30, 111, 122, 0.58); /* #1e6f7a at ~50% */
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  width: 100%;
+}
+
+body {
+  background: var(--color-fs-bg);
+  color: var(--color-fs-ink);
+  font-family: var(--font-pixel);
+  -webkit-font-smoothing: none;
+  overflow-x: hidden;
+}
+
+/* Every sprite asset renders hard-edged — no anti-aliasing anywhere. */
+.pixelated {
+  image-rendering: pixelated;
+  shape-rendering: crispEdges;
+}
+
+/* =========================================================
+   BACKGROUND — PERSPECTIVE GRID
+   Two separate systems, split by the horizon line:
+     .grid-bands  rectangular grid ABOVE the horizon, visible only in the
+                  two side margins (the centre stays flat navy so the hero
+                  copy reads cleanly).
+     .grid-floor  the perspective floor BELOW the horizon: lines converge
+                  toward the centre and spread toward the bottom edges.
+   The floor is hard-clipped by .floor-clip so it can never paint above the
+   horizon — that clip is what keeps the old "pyramid" artefact away.
+   ========================================================= */
+
+/* -- above the horizon: flat rectangular grid, side bands only -- */
+.grid-bands {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--nav-h);
+  height: calc(var(--horizon) - var(--nav-h));
+  background-image:
+    linear-gradient(to right, var(--grid-line) 0 2px, transparent 2px),
+    linear-gradient(to bottom, var(--grid-line) 0 2px, transparent 2px);
+  background-size: var(--grid-cell) var(--grid-cell);
+  /* Only two vertical bands of the grid are ever shown. */
+  --bands: linear-gradient(
+    to right,
+    transparent 12%,
+    #000 15%,
+    #000 26%,
+    transparent 30%,
+    transparent 70%,
+    #000 74%,
+    #000 87%,
+    transparent 91%
+  );
+  -webkit-mask-image: var(--bands);
+  mask-image: var(--bands);
+}
+
+/* -- below the horizon: the receding floor --
+   The floor plane covers the full viewport (PerspectiveFloor emits no geometry
+   above the horizon), and is densest at the horizon, dissolving as it comes
+   toward the viewer so the lower third stays clean for the prompt + footer. */
+/* Fade stops are expressed RELATIVE to --horizon, so moving the horizon (the
+   sign-up page sits much lower) shifts the whole falloff with it instead of
+   leaving the stops stranded above the grid. */
+/* The first stop is TRANSPARENT at the horizon rather than opaque: depth lines
+   are born exactly on the horizon each scroll cycle, and this short ramp hides
+   that spawn (it also reads as distance haze). Everything below is unchanged. */
+.floor-fade {
+  --fade: linear-gradient(
+    to bottom,
+    transparent var(--horizon),
+    #000 calc(var(--horizon) + 3.5%),
+    #000 calc(var(--horizon) + 14%),
+    rgba(0, 0, 0, 0.4) calc(var(--horizon) + 24%),
+    transparent calc(var(--horizon) + 32%)
+  );
+  -webkit-mask-image: var(--fade);
+  mask-image: var(--fade);
+}
+
+/* =========================================================
+   MOVING FLOOR — the "infinite highway"
+   Each depth line advances into the next line's slot over one shared
+   duration, so one cycle shifts the whole field by exactly one depth step
+   and the loop is seamless. --dy is set per line by PerspectiveFloor, and
+   because it grows toward the viewer the flow accelerates correctly.
+   transform only, linear, no reset jump.
+   ========================================================= */
+@keyframes floorScroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, var(--dy, 0px), 0);
+  }
+}
+
+/* One shared energy pulse across the WHOLE net, so the depth lines and the
+   rails read as a single connected surface rather than two overlapping
+   patterns. Both axes run it off the same duration and easing, with no delay,
+   so they are always at the identical point of the cycle. */
+@keyframes floorPulse {
+  0%,
+  100% {
+    opacity: 0.72;
+  }
+  25% {
+    opacity: 0.88;
+  }
+  50% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 0.88;
+  }
+}
+
+/* --grid-cycle is the single timing source for the entire floor. Change it
+   once and both axes stay locked. */
+.floor-line,
+.floor-rail {
+  --grid-cycle: 1.2s;
+}
+
+/* Depth lines: travel toward the viewer AND pulse. */
+.floor-line {
+  animation:
+    floorScroll var(--grid-cycle) linear infinite,
+    floorPulse var(--grid-cycle) linear infinite;
+  will-change: transform, opacity;
+}
+
+/* Rails: sweep sideways. --drot is set per rail by PerspectiveFloor and is the
+   angle onto its neighbour's position, so one cycle reproduces the original
+   set exactly (seamless). Rotating about the vanishing point — rather than
+   translating on X — is what keeps the rails converged while they slide.
+   `transform-box: view-box` makes transform-origin resolve in viewBox units,
+   which is how the origin can sit on the VP (outside the line's own bbox). */
+@keyframes railSweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(var(--drot, 0deg));
+  }
+}
+
+/* Rails hold position. Measured: with railSweep enabled the grid intersections
+   travelled 133.6px sideways vs 30px down (4.4:1) — which reads as the whole
+   floor scrolling diagonally, even though the depth lines themselves move on
+   pure Y (dx = 0.00px). Static rails drop that lateral drift to 19px, which is
+   just the perspective splay and unavoidable.
+   To re-enable the sideways sweep, add `railSweep var(--grid-cycle) linear
+   infinite,` to the animation below — --drot and the VP transform-origin are
+   still supplied per rail by PerspectiveFloor. */
+.floor-rail {
+  transform-box: view-box;
+  animation: floorPulse var(--grid-cycle) linear infinite;
+  will-change: opacity;
+}
+
+/* !! DO NOT gate this (or any decoration animation) behind
+   `@media (prefers-reduced-motion: reduce)` with `animation: none`.
+   This browser/OS combination reports `reduce`, so such a rule silently
+   freezes the entire scene — it has already caused two "nothing is moving"
+   regressions in this file. Decoration motion now has ONE code path, so what
+   is verified is what ships. See the note above the sprite animations too. */
+
+/* A couple of grid lines lit up in hot green, as in the reference. */
+.grid-accent {
+  position: absolute;
+  height: 2px;
+  background: var(--color-fs-green-hot);
+  opacity: 0.5;
+  box-shadow: 0 0 6px var(--color-fs-green-hot);
+}
+
+/* =========================================================
+   GLOWS — layered shadows (2–3 stops) so every light source
+   has falloff instead of one flat halo.
+   ========================================================= */
+
+/* "FS" wordmark */
+.logo-glow {
+  color: var(--color-fs-logo);
+  text-shadow:
+    2px 2px 0 #06283a,
+    0 0 10px #22d3ee,
+    0 0 20px #22d3ee;
+}
+
+/* "FASTSHIP" — white core, blue-white bloom, hard 8-bit drop step */
+.title-glow {
+  color: #ffffff;
+  text-shadow:
+    4px 4px 0 #0b2b40,
+    0 0 10px #fff,
+    0 0 20px #7dd3fc,
+    0 0 40px #38bdf8;
+}
+
+/* Clean variant of the title glow: white core plus a smooth cyan/blue bloom and
+   nothing else. .title-glow's hard `4px 4px 0` step is the hero's 8-bit drop
+   shadow — at smaller sizes it reads as a ghosted/torn duplicate, so headings
+   below hero scale use this instead. */
+.title-glow-clean {
+  color: #ffffff;
+  text-shadow:
+    0 0 8px rgba(255, 255, 255, 0.85),
+    0 0 20px rgba(125, 211, 252, 0.75),
+    0 0 40px rgba(56, 189, 248, 0.5);
+}
+
+.gold-glow {
+  color: var(--color-fs-gold);
+  text-shadow:
+    0 0 6px rgba(251, 191, 36, 0.8),
+    0 0 16px rgba(251, 191, 36, 0.45);
+}
+
+.teal-glow {
+  color: var(--color-fs-teal);
+  text-shadow:
+    0 0 6px rgba(34, 211, 238, 0.85),
+    0 0 16px rgba(34, 211, 238, 0.5);
+}
+
+.white-glow {
+  color: #ffffff;
+  text-shadow:
+    0 0 6px rgba(255, 255, 255, 0.55),
+    0 0 14px rgba(125, 211, 252, 0.4);
+}
+
+/* =========================================================
+   BLOCKY CHROME — buttons & notched boxes.
+   Corners are cut on the diagonal via clip-path, never rounded.
+   ========================================================= */
+
+/* The one corner-cut shape both the buttons and the stat boxes use. */
+@property --cut {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 6px;
+}
+
+.cut-corners {
+  clip-path: polygon(
+    var(--cut) 0,
+    calc(100% - var(--cut)) 0,
+    100% var(--cut),
+    100% calc(100% - var(--cut)),
+    calc(100% - var(--cut)) 100%,
+    var(--cut) 100%,
+    0 calc(100% - var(--cut)),
+    0 var(--cut)
+  );
+}
+
+/* Solid green fill + black text — SHOP ALL and START YOUR QUEST. */
+.pixel-btn {
+  --cut: 5px;
+  display: inline-block;
+  border: 0;
+  padding: 2px; /* becomes the thin light rim around the green face */
+  cursor: pointer;
+  font-family: var(--font-pixel);
+  color: #05121f;
+  background: #f2fff8;
+  filter: drop-shadow(0 0 6px rgba(125, 232, 126, 0.75))
+    drop-shadow(0 0 16px rgba(57, 255, 20, 0.45));
+}
+
+.pixel-btn > span {
+  display: block;
+  background: var(--color-fs-green);
+}
+
+.pixel-btn:hover > span {
+  background: #93f294;
+}
+
+/* Active nav item — solid cyan chip with dark text, marking the current page. */
+/* Border-forward, not a solid block: 2px cyan rule over a low-opacity wash,
+   matching the ALREADY REGISTERED? / loading-panel treatment. */
+.nav-active {
+  border: 2px solid var(--color-fs-teal);
+  background: rgba(34, 211, 238, 0.12);
+  color: var(--color-fs-teal);
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.8);
+  box-shadow:
+    0 0 8px rgba(34, 211, 238, 0.5),
+    0 0 20px rgba(34, 211, 238, 0.25),
+    inset 0 0 12px rgba(34, 211, 238, 0.12);
+}
+
+/* Green-rimmed path card. All three sit at the same rest brightness; only a
+   real :hover / keyboard :focus-within lifts the glow. */
+.path-card {
+  border: 2px solid var(--color-fs-green);
+  background: rgba(11, 14, 33, 0.72);
+  box-shadow:
+    0 0 10px rgba(125, 232, 126, 0.35),
+    0 0 26px rgba(125, 232, 126, 0.18),
+    inset 0 0 26px rgba(125, 232, 126, 0.06);
+  transition:
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.path-card:hover,
+.path-card:focus-within {
+  border-color: #a8f5a9;
+  box-shadow:
+    0 0 14px rgba(125, 232, 126, 0.8),
+    0 0 40px rgba(125, 232, 126, 0.42),
+    inset 0 0 30px rgba(125, 232, 126, 0.13);
+}
+
+/* Cyan outlined box with a dark teal wash — "ALREADY REGISTERED?". */
+.teal-outline-box {
+  border: 2px solid var(--color-fs-teal);
+  background: rgba(14, 78, 87, 0.55);
+  color: #86f3ee;
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.8);
+  box-shadow:
+    0 0 10px rgba(34, 211, 238, 0.55),
+    0 0 26px rgba(34, 211, 238, 0.3),
+    inset 0 0 18px rgba(34, 211, 238, 0.15);
+  transition: box-shadow 0.18s ease;
+}
+
+.teal-outline-box:hover {
+  box-shadow:
+    0 0 14px rgba(34, 211, 238, 0.85),
+    0 0 36px rgba(34, 211, 238, 0.45),
+    inset 0 0 22px rgba(34, 211, 238, 0.22);
+}
+
+/* =========================================================
+   SIGN-UP FORM
+   Shared by every role's sign-up page — only the title changes.
+   ========================================================= */
+
+.signup-card {
+  border: 2px solid rgba(34, 211, 238, 0.7);
+  background: rgba(22, 28, 52, 0.85);
+  box-shadow:
+    0 0 12px rgba(34, 211, 238, 0.35),
+    0 0 34px rgba(34, 211, 238, 0.18),
+    inset 0 0 30px rgba(34, 211, 238, 0.05);
+}
+
+/* Icon well and text well share one rest style; focusing the row lifts both. */
+.field-box {
+  border: 2px solid #5fc9b4;
+  background: rgba(10, 26, 32, 0.8);
+  box-shadow: 0 0 6px rgba(95, 201, 180, 0.32);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.signup-field:focus-within .field-box {
+  border-color: #6ff0e6;
+  box-shadow:
+    0 0 10px rgba(111, 240, 230, 0.75),
+    0 0 22px rgba(111, 240, 230, 0.3);
+}
+
+.signup-field input {
+  color: #d8f4ff;
+  caret-color: #6ff0e6;
+}
+
+.signup-field input::placeholder {
+  color: rgba(216, 244, 255, 0.35);
+}
+
+/* =========================================================
+   CLIENT DASHBOARD
+   Same glow/blocky-corner vocabulary as the stat boxes and form
+   containers — nothing soft-rounded.
+   ========================================================= */
+
+/* Records table shell */
+.records-panel {
+  border: 2px solid var(--color-fs-green);
+  background: rgba(9, 22, 20, 0.72);
+  box-shadow:
+    0 0 12px rgba(125, 232, 126, 0.4),
+    0 0 32px rgba(125, 232, 126, 0.18),
+    inset 0 0 30px rgba(125, 232, 126, 0.05);
+}
+
+/* "SHIPMENT & ORDER RECORDS" bar across the top of the table */
+.records-caption {
+  border-bottom: 2px solid rgba(125, 232, 126, 0.75);
+  color: #d8ffd9;
+  text-shadow:
+    0 0 8px rgba(125, 232, 126, 0.9),
+    0 0 20px rgba(125, 232, 126, 0.45);
+}
+
+/* Column headings */
+.records-head th {
+  border-bottom: 2px solid rgba(125, 232, 126, 0.6);
+  border-right: 2px solid rgba(34, 211, 238, 0.28);
+  color: #a7e8a8;
+  text-shadow: 0 0 6px rgba(125, 232, 126, 0.6);
+}
+
+.records-head th:last-child {
+  border-right: 0;
+}
+
+/* Body rows — thin teal dividers, matching the site's line weight */
+.records-body td {
+  border-bottom: 1px solid rgba(34, 211, 238, 0.28);
+  border-right: 1px solid rgba(34, 211, 238, 0.22);
+  color: #dff5e2;
+}
+
+.records-body td:last-child {
+  border-right: 0;
+}
+
+.records-body tr:last-child td {
+  border-bottom: 0;
+}
+
+.records-body tr:hover td {
+  background: rgba(34, 211, 238, 0.07);
+}
+
+/* Teal/cyan text link — TRACKING column, LOG OUT */
+.pixel-link {
+  color: var(--color-fs-teal);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  background: none;
+  border: 0;
+  padding: 0;
+  font-family: inherit;
+  transition: color 0.15s ease;
+}
+
+.pixel-link:hover {
+  color: #ffffff;
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.8);
+}
+
+/* Blocky glowing frame around the real avatar photo. The image itself stays a
+   normal <img> — only the frame is themed. */
+.avatar-frame {
+  border: 2px solid var(--color-fs-teal);
+  background: #0c1a33;
+  box-shadow:
+    0 0 8px rgba(34, 211, 238, 0.65),
+    0 0 20px rgba(34, 211, 238, 0.3);
+  line-height: 0;
+}
+
+.avatar-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+
+/* Account-type selector on the login page. Rest state matches .field-box so it
+   sits in the same visual family as the inputs below it; the selected card
+   lifts its border and glow rather than changing shape. */
+.acct-card {
+  border: 2px solid #5fc9b4;
+  background: rgba(10, 26, 32, 0.8);
+  box-shadow: 0 0 6px rgba(95, 201, 180, 0.32);
+  color: #bde9e8;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.acct-card:hover {
+  border-color: #8fe0d8;
+  box-shadow: 0 0 10px rgba(111, 240, 230, 0.5);
+}
+
+.acct-card[aria-pressed='true'] {
+  border-color: #a9dfdf;
+  background: rgba(34, 211, 238, 0.14);
+  color: #eafdff;
+  box-shadow:
+    0 0 12px rgba(169, 223, 223, 0.85),
+    0 0 30px rgba(34, 211, 238, 0.4),
+    inset 0 0 20px rgba(34, 211, 238, 0.18);
+}
+
+.acct-card:focus-visible {
+  outline: 2px solid #eafdff;
+  outline-offset: 2px;
+}
+
+/* Inline validation message — small pixel text under the offending field.
+   Deliberately in-page rather than a native browser bubble, which would break
+   the retro treatment. */
+.field-error {
+  color: #ff7a5c;
+  text-shadow: 0 0 6px rgba(255, 122, 92, 0.6);
+}
+
+/* [ CREATE ACCOUNT ] / [ SIGN UP ] — bracketed submit */
+.bracket-btn {
+  border: 2px solid #7fd6a3;
+  background: rgba(10, 30, 24, 0.6);
+  color: #cef0f1;
+  text-shadow: 0 0 8px rgba(127, 214, 163, 0.7);
+  box-shadow:
+    0 0 10px rgba(127, 214, 163, 0.4),
+    0 0 26px rgba(127, 214, 163, 0.2),
+    inset 0 0 18px rgba(127, 214, 163, 0.08);
+  transition:
+    box-shadow 0.16s ease,
+    border-color 0.16s ease;
+}
+
+.bracket-btn:hover,
+.bracket-btn:focus-visible {
+  border-color: #a8f5c4;
+  box-shadow:
+    0 0 14px rgba(127, 214, 163, 0.8),
+    0 0 38px rgba(127, 214, 163, 0.4),
+    inset 0 0 22px rgba(127, 214, 163, 0.16);
+}
+
+/* Notched stat box: glowing themed rim + dark navy face. */
+.notch-box {
+  --cut: 12px;
+  --rim: var(--color-fs-teal);
+  padding: 2px;
+  background: var(--rim);
+  filter: drop-shadow(0 0 5px var(--rim)) drop-shadow(0 0 14px var(--rim));
+}
+
+.notch-box > div {
+  background: #0c1a33;
+}
+
+/* =========================================================
+   BLINKING "PRESS START TO SHOP" PROMPT
+   ========================================================= */
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.blink {
+  animation: blink 2.4s steps(1, end) infinite;
+}
+
+/* =========================================================
+   LOADING / TRANSITION OVERLAY
+   Everything here runs for as long as the overlay is on screen —
+   the turret never sits still. transform/opacity only.
+   ========================================================= */
+
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* muzzle flash — quick swell and settle */
+@keyframes muzzle {
+  0%,
+  100% {
+    transform: scale(0.7);
+    opacity: 0.5;
+  }
+  25% {
+    transform: scale(0.98);
+    opacity: 0.8;
+  }
+  45% {
+    transform: scale(1.18);
+    opacity: 1;
+  }
+  70% {
+    transform: scale(0.95);
+    opacity: 0.75;
+  }
+}
+
+/* bullet tracer — streaks outward from the barrel, then fades.
+   --reach is set per tracer so they don't all travel the same distance. */
+@keyframes tracer {
+  0% {
+    transform: translate3d(0, 0, 0) scaleX(0.25);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  50% {
+    transform: translate3d(calc(var(--reach, 150px) * 0.5), 0, 0) scaleX(0.7);
+    opacity: 0.9;
+  }
+  75% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate3d(var(--reach, 150px), 0, 0) scaleX(1);
+    opacity: 0;
+  }
+}
+
+/* muzzle debris — flickers on the same beat as the flash */
+@keyframes spark {
+  0%,
+  100% {
+    opacity: 0.12;
+    transform: scale(0.65);
+  }
+  25% {
+    opacity: 0.6;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+  75% {
+    opacity: 0.6;
+    transform: scale(0.92);
+  }
+}
+
+/* CRT scanlines drifting down the panel. Driven by translate3d, NOT
+   background-position — animating background-position repaints the whole
+   layer every frame. The strip repeats every 4px, so a 4px travel loops
+   seamlessly. */
+@keyframes scanroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 4px, 0);
+  }
+}
+
+.loading-panel {
+  border: 2px solid rgba(34, 211, 238, 0.75);
+  background: #0b1026;
+  box-shadow:
+    0 0 14px rgba(34, 211, 238, 0.4),
+    0 0 44px rgba(34, 211, 238, 0.2),
+    inset 0 0 40px rgba(34, 211, 238, 0.06);
+}
+
+/* Clipping wrapper, so the translating strip can overhang without escaping the
+   panel (whose own overflow stays visible for the tracers). */
+.scanline-clip {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.scanline-strip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -4px;
+  height: calc(100% + 4px);
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0 2px,
+    rgba(0, 0, 0, 0.32) 2px 4px
+  );
+  animation: scanroll 0.9s linear infinite;
+  will-change: transform;
+}
+
+/* =========================================================
+   AMBIENT SPRITE MOTION
+   Background decoration only — the grid itself stays static.
+   Every movement is small (2–6px, or an opacity/glow pulse) and slow
+   (1.5–5s). Each sprite gets its own animation-delay at the call site so
+   the scene reads as alive and asynchronous rather than synced.
+   ========================================================= */
+
+/* All of these animate ONLY transform and/or opacity so they run on the
+   compositor thread. Every one carries intermediate stops (25%/50%/75%) so the
+   browser interpolates a curve instead of lerping between two extremes, and
+   every one is driven by CSS rather than a JS timer. */
+
+/* twinkling dots, stars and sparkles */
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  25% {
+    opacity: 0.72;
+  }
+  50% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 0.72;
+  }
+}
+
+/* slow vertical drift — the directional arrow */
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, -4px, 0);
+  }
+  25% {
+    transform: translate3d(0, -1px, 0);
+  }
+  50% {
+    transform: translate3d(0, 4px, 0);
+  }
+  75% {
+    transform: translate3d(0, 1px, 0);
+  }
+}
+
+/* tiny idle bob — object sprites */
+@keyframes bob {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  25% {
+    transform: translate3d(0, -1.5px, 0);
+  }
+  50% {
+    transform: translate3d(0, -3px, 0);
+  }
+  75% {
+    transform: translate3d(0, -1.5px, 0);
+  }
+}
+
+/* retro VU meter — vertical bars rise and fall */
+@keyframes vu {
+  0%,
+  100% {
+    transform: scaleY(0.68);
+    opacity: 0.6;
+  }
+  25% {
+    transform: scaleY(0.85);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+  75% {
+    transform: scaleY(0.85);
+    opacity: 0.8;
+  }
+}
+
+/* old CRT blink — a composited swell. The glow itself is a STATIC filter on
+   .anim-crt; animating `filter` forced a full repaint every frame. */
+@keyframes crt {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(0.92);
+  }
+  25% {
+    opacity: 0.78;
+    transform: scale(0.99);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  75% {
+    opacity: 0.78;
+    transform: scale(0.99);
+  }
+}
+
+/* marquee lights cycling along a segmented rule — a smooth fade, not the hard
+   steps(1) on/off it used to be (that was the visible "stepped" stutter). */
+@keyframes marquee {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  25% {
+    opacity: 0.6;
+  }
+  45% {
+    opacity: 0.25;
+  }
+  70% {
+    opacity: 0.65;
+  }
+}
+
+.anim-twinkle {
+  animation: twinkle 1.5s ease-in-out infinite;
+}
+
+.anim-twinkle-slow {
+  animation: twinkle 2.1s ease-in-out infinite;
+}
+
+.anim-drift {
+  animation: drift 2s ease-in-out infinite;
+}
+
+.anim-bob {
+  animation: bob 1.6s ease-in-out infinite;
+}
+
+.anim-vu {
+  animation: vu 1.3s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+/* same VU pulse for bars that read as hanging from the top */
+.anim-vu-down {
+  animation: vu 1.5s ease-in-out infinite;
+  transform-origin: top center;
+}
+
+.anim-crt {
+  /* baked once into the layer, then only transform/opacity animate */
+  filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.75));
+  animation: crt 1.8s ease-in-out infinite;
+}
+
+.anim-marquee {
+  animation: marquee 1.2s ease-in-out infinite;
+}
+
+/* Promote every animated sprite to its own compositor layer up front, so the
+   first frame of each loop doesn't pay for the promotion. */
+.anim-twinkle,
+.anim-twinkle-slow,
+.anim-drift,
+.anim-bob,
+.anim-vu,
+.anim-vu-down,
+.anim-crt,
+.anim-marquee {
+  will-change: transform, opacity;
+}
+
+/* Reduced motion: drop real MOVEMENT, keep the gentle opacity fades.
+   WCAG 2.3.3 is about motion, not brightness, so twinkle / marquee / crt /
+   blink (all opacity-only) keep running and the scene never looks frozen.
+   Only translation and scaling are removed.
+   NOTE: this deliberately does NOT blanket `animation: none` — doing that
+   froze the entire decoration layer for anyone whose browser reports
+   `reduce`, which is the bug this replaced. */
+/* Intentionally NO `@media (prefers-reduced-motion: reduce)` override here.
+   This browser reports `reduce`, and gating on it meant drift/bob never ran and
+   vu/crt silently fell back to opacity-only — i.e. the scene looked dead on the
+   very machine the design is reviewed on. Decoration motion is deliberately
+   small (2–6px translations, opacity pulses), so it runs unconditionally and
+   there is a single code path to verify.
+   To honour the preference for real visitors, prefer a REDUCED-INTENSITY
+   variant (longer durations / shorter travel) over `animation: none` — never a
+   blanket freeze. */

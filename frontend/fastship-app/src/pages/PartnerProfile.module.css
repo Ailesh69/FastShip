@@ -1,0 +1,52 @@
+/* =========================================================
+   PARTNER PROFILE — the few bits the client Profile Editor doesn't have.
+   Everything else (avatar ring, curved text, panel, rows, wells, buttons)
+   is imported from ProfileEditor.module.css so the two editors stay
+   identical without duplicating any rules.
+   ========================================================= */
+
+/* Read-only badges beside the heading */
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.badge {
+  padding: 5px 8px;
+  border: 1px solid currentColor;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.badgeOk {
+  color: #7de87e;
+  background: rgba(125, 232, 126, 0.12);
+}
+
+.badgeNo {
+  color: #ff9b83;
+  background: rgba(255, 107, 74, 0.12);
+}
+
+.badgeInfo {
+  color: var(--color-fs-teal);
+  background: rgba(34, 211, 238, 0.12);
+}
+
+/* the zip-chip row needs to breathe vertically, unlike the fixed-height rows */
+.chipRow {
+  align-items: flex-start;
+}
+
+.chipLabel {
+  padding-top: 9px;
+}
+
+.chipField {
+  flex: 1;
+  min-width: 0;
+}

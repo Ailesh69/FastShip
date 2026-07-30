@@ -1,0 +1,95 @@
+/* =========================================================
+   PARTNER DASHBOARD — page-scoped (CSS Module, hashed at build).
+   Table shell reuses the GLOBAL .records-* classes from the Client/Seller
+   dashboards; only partner-specific bits live here. No global file touched.
+   ========================================================= */
+
+/* Row data in VT323 — legible at table size. Headers stay Press Start 2P. */
+.dataCell {
+  font-family: var(--font-term);
+  font-size: 17px;
+  letter-spacing: 0.4px;
+}
+
+.statusCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  white-space: nowrap;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+/* express / fragile badges */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+}
+
+.tag {
+  padding: 3px 5px;
+  border: 1px solid currentColor;
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.tagExpress {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.12);
+}
+
+.tagFragile {
+  color: #ff9b83;
+  background: rgba(255, 107, 74, 0.12);
+}
+
+.tagPlain {
+  color: #7fd6a3;
+  background: rgba(127, 214, 163, 0.12);
+}
+
+/* stacked bracket links */
+.actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.actionLink {
+  cursor: pointer;
+  border: 0;
+  background: none;
+  padding: 0;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1.5;
+  color: var(--color-fs-teal);
+  white-space: nowrap;
+  transition:
+    color 0.15s ease,
+    text-shadow 0.15s ease;
+}
+
+.actionLink:hover,
+.actionLink:focus-visible {
+  color: #ffffff;
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.85);
+}
+
+/* empty state */
+.empty {
+  padding: 46px 20px;
+  text-align: center;
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  line-height: 1.8;
+  color: #8fb6b4;
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.35);
+}
