@@ -21,6 +21,7 @@ class DeliveryPartner(User, table=True):
         ),
     )
     serviceable_zip_codes: list[int] = Field(sa_column=Column(ARRAY(Integer)))
+    zipcode: int | None = Field(default=None)
     max_handling_capacity: int
     created_At: datetime = Field(
         sa_column=Column(
@@ -48,6 +49,7 @@ class DeliveryPartner(User, table=True):
 class BaseDP(BaseModel):
     name: str
     email: EmailStr
+    zipcode : int 
     serviceable_zip_codes: list[int]
     max_handling_capacity: int
 
@@ -62,5 +64,6 @@ class DPCreate(BaseDP):
 
 class DPUpdate(BaseModel):
     email: EmailStr
+    zipcode : int | None = None 
     serviceable_zip_codes: list[int] | None = None
     max_handling_capacity: int | None = None

@@ -38,8 +38,12 @@ class BaseSeller(BaseModel):
 
 
 class SellerRead(BaseSeller):
-    pass
+    id : UUID 
+    email_verified : bool
+    zipcode : int | None 
+    created_at : datetime
 
 
 class SellerCreate(BaseSeller):
     password: str
+    zipcode : str 

@@ -9,14 +9,14 @@ from utils import TEMPLATE_DIR
 from Database.redis import add_jti_to_blacklist
 from schemas.seller import SellerCreate, SellerRead
 from schemas.Token import Token
-from api.Dependencies.SellerDependency import Seller_ServiceDep, _get_access_token
+from api.Dependencies.SellerDependency import Seller_ServiceDep, _get_access_token , CurrSellerDep
 
 router = APIRouter(prefix="/seller", tags=[APITag.SELLER])
 templates = Jinja2Templates(directory=TEMPLATE_DIR)
 
 
 @router.post(
-    "/signup",
+    "/register",
     name="Register Seller",
     description="Create a new **seller** account. A verification email will be sent upon registration.",
     status_code=201,
@@ -43,7 +43,7 @@ async def register_seller(seller: SellerCreate, service: Seller_ServiceDep):
 
 
 @router.post(
-    "/login",
+    "/token",
     name="Seller Login",
     description="Authenticate a **seller** and receive a bearer access token.",
     response_model=Token,
@@ -155,3 +155,17 @@ async def password_form(
 async def logout_seller(token_data: Annotated[dict, Depends(_get_access_token)]):
     await add_jti_to_blacklist(token_data["jti"])
     return {"details": "Successful"}
+
+
+@router.get(
+    "/me",
+    name="Get Seller Profile",
+    description="Retrieve the authenticated **seller's** profile.",
+    response_model=SellerRead,
+    responses={
+        200: {"description": "Seller profile retrieved successfully"},
+        401: {"description": "Invalid or expired token"},
+    },
+)
+async def get_seller_me(seller: CurrSellerDep):
+    return seller
