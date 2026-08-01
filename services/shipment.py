@@ -63,9 +63,9 @@ class ShipmentService(BaseService):
             raise ClientNotAuthorized()
         if shipment_update.status == ShipmentStatus.delivered:
             code = await add_otp(shipment.id)
-            if code != shipment_update.verify_otp:
+            if code != shipment_update.verification_code:
                 raise ClientNotAuthorized()
-        update = shipment_update.model_dump(exclude_none=True, exclude=["verify_otp"])
+        update = shipment_update.model_dump(exclude_none=True, exclude=["verification_code"])
         if shipment_update.estimated_delivery:
             shipment.estimated_delivery = shipment_update.estimated_delivery
         if len(update) > 1 or not shipment_update.estimated_delivery:

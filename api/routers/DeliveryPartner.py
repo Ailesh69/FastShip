@@ -20,7 +20,7 @@ templates = Jinja2Templates(directory=TEMPLATE_DIR)
 
 
 @router.post(
-    "/signup",
+    "/register",
     name="Register Delivery Partner",
     description="Create a new **delivery partner** account. A verification email will be sent upon registration.",
     status_code=201,
@@ -47,7 +47,7 @@ async def register_partner(dp: DPCreate, service: DeliveryPartnerServiceDep):
 
 
 @router.post(
-    "/login",
+    "/token",
     name="Partner Login",
     description="Authenticate a **delivery partner** and receive a bearer access token.",
     response_model=Token,
@@ -177,3 +177,16 @@ async def update_partner(
     update_data: DPUpdate, partner: CurrPartnerDep, service: DeliveryPartnerServiceDep
 ):
     return await service.update(partner.sqlmodel_update(update_data))
+
+@router.get(
+    "/me",
+    name="Get Partner Profile",
+    description="Retrieve the authenticated **delivery partner's** profile.",
+    response_model=DPRead,
+    responses={
+        200: {"description": "Partner profile retrieved successfully"},
+        401: {"description": "Invalid or expired token"},
+    },
+)
+async def get_partner_me(partner: CurrPartnerDep):
+    return partner

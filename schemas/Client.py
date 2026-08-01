@@ -27,7 +27,7 @@ class Client(User, table=True):
     )
     shipments: list["Shipment"] = Relationship(
         sa_relationship_kwargs={
-            "primaryjoin": "foreign(Shipment.client_Email)==Client.email",
+            "primaryjoin": "foreign(Shipment.client_contact_email)==Client.email",
             "viewonly": True,
             "lazy": "selectin",
         }

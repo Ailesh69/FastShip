@@ -37,14 +37,12 @@ class Shipment(BaseShipment, table=True):
     timeline: list["ShipmentEvent"] = Relationship(
         back_populates="shipment", sa_relationship_kwargs={"lazy": "selectin"}
     )
-    client_Email: EmailStr | None = Field(default=None)
-    client_contact_number: int | None = Field(
-        default=None, sa_column=Column(sa.BigInteger(), nullable=True)
-    )
+    client_contact_email: EmailStr | None = Field(default=None)
+    client_contact_phone: str | None = Field(default=None)
 
     @model_validator(mode="after")
     def require_at_least_one_contact(self):
-        if self.client_Email is None and self.client_contact_number is None:
+        if self.client_contact_email is None and self.client_contact_phone is None:
             raise ValueError(
                 "At least one of client_Email or client_contact_number must be provided"
             )
@@ -82,12 +80,12 @@ class Shipment(BaseShipment, table=True):
 class ShipmentCreate(BaseShipment):
     """Shipment details to create a new shipment."""
 
-    client_Email: EmailStr | None = Field(default=None)
-    client_contact_number: int | None = Field(default=None)
+    client_contact_email: EmailStr | None = Field(default=None)
+    client_contact_phone: int | None = Field(default=None)
 
     @model_validator(mode="after")
     def require_at_least_one_contact(self):
-        if self.client_Email is None and self.client_contact_number is None:
+        if self.client_contact_email is None and self.client_contact_phone is None:
             raise ValueError(
                 "At least one of client_Email or client_contact_number must be provided"
             )
@@ -105,7 +103,7 @@ class ShipmentRead(BaseShipment):
 class ShipmentUpdate(BaseModel):
     location: int | None = Field(default=None)
     status: Optional[ShipmentStatus] = Field(default=None)
-    verify_otp: int | None = Field(default=None)
+    verification_code: str | None = Field(default=None)
     description: str | None = Field(default=None)
     estimated_delivery: Optional[datetime] = Field(default=None)
 

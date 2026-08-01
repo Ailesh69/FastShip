@@ -106,9 +106,9 @@ class ShipmentEventService(BaseService):
                 }
                 code = randint(100_000, 999_999)
                 await add_otp(shipment.id, code)
-                if shipment.client_contact_number:
+                if shipment.client_contact_phone:
                     send_sms.delay(
-                        to=f"+{shipment.client_contact_number}",
+                        to=f"+{shipment.client_contact_phone}",
                         body=f"Your order is arriving soon! Share OTP {code} with the delivery agent when you receive your order.",
                     )
                 else:
@@ -134,9 +134,9 @@ class ShipmentEventService(BaseService):
             case _:
                 return
 
-        if shipment.client_Email:
+        if shipment.client_contact_email:
             send_email_with_template.delay(
-                recipients=[shipment.client_Email],
+                recipients=[shipment.client_contact_email],
                 subject=subject,
                 context=context,
                 template_name=template,

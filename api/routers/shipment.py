@@ -37,7 +37,7 @@ async def get_shipment(id: UUID, service: Shipment_ServiceDep):
     return await service.get(id)
 
 
-@router.get("/tracking", response_class=HTMLResponse, include_in_schema=False)
+@router.get("/track", response_class=HTMLResponse, include_in_schema=False)
 async def get_tracking(id: UUID, service: Shipment_ServiceDep):
     shipment = await service.get(id)
     if shipment is None:
@@ -117,7 +117,7 @@ async def update_shipment(
     return await service.update(id, shipment_update, partner)
 
 
-@router.get(
+@router.post(
     "/cancel",
     name="Cancel Shipment",
     description="Cancel a **shipment** by ID. Only the seller who created it can cancel.",

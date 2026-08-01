@@ -1,4 +1,10 @@
-import { DeliveryTruck, PixelCheck, PixelHourglass } from '../components/PixelIcons'
+import {
+  DeliveryTruck,
+  PixelCheck,
+  PixelClipboard,
+  PixelCross,
+  PixelScooter,
+} from '../components/PixelIcons'
 import { useLoadingNav } from '../context/loadingNav'
 import s from './SellerDashboard.module.css'
 
@@ -44,7 +50,7 @@ const ORDERS = [
     id: 'FS1013',
     content: 'HOME GOODS',
     destination: 'LONDON, UK',
-    status: 'PENDING',
+    status: 'PLACED',
     eta: '7/28',
     partner: 'NONE',
     actions: ['VIEW DETAIL', 'CANCEL'],
@@ -64,7 +70,9 @@ const ORDERS = [
 function StatusIcon({ status }) {
   if (status === 'DELIVERED') return <PixelCheck />
   if (status === 'IN TRANSIT') return <DeliveryTruck />
-  return <PixelHourglass />
+  if (status === 'OUT FOR DELIVERY') return <PixelScooter />
+  if (status === 'CANCELLED') return <PixelCross />
+  return <PixelClipboard />
 }
 
 function SellerDashboard() {
