@@ -37,19 +37,23 @@ tags_metadata = [
 
 app = FastAPI(
     lifespan=lifespan_handler,
-    title="DarruBaj Deliveries",
-    description="get your shipment fastest by our drunk drivers",
+    title="FastShip",
+    description="Retro pixel-art shipment tracking and delivery management API.",
     version="6.7",
     contact={
-        "email": "darubaaj69@gmail.com",
-        "url": "https://onlyfans.com/",
+        "email": "REPLACE_WITH_REAL_EMAIL",
     },
     openapi_tags=tags_metadata,
 )
 
 add_exception_handlers(app)
 
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(master_router)
 

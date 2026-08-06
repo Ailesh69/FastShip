@@ -44,7 +44,7 @@ class Shipment(BaseShipment, table=True):
     def require_at_least_one_contact(self):
         if self.client_contact_email is None and self.client_contact_phone is None:
             raise ValueError(
-                "At least one of client_Email or client_contact_number must be provided"
+                "At least one of client_contact_email or client_contact_phone must be provided"
             )
         return self
 
@@ -81,13 +81,13 @@ class ShipmentCreate(BaseShipment):
     """Shipment details to create a new shipment."""
 
     client_contact_email: EmailStr | None = Field(default=None)
-    client_contact_phone: int | None = Field(default=None)
+    client_contact_phone: str | None = Field(default=None)
 
     @model_validator(mode="after")
     def require_at_least_one_contact(self):
         if self.client_contact_email is None and self.client_contact_phone is None:
             raise ValueError(
-                "At least one of client_Email or client_contact_number must be provided"
+                "At least one of client_contact_email or client_contact_phone must be provided"
             )
         return self
 

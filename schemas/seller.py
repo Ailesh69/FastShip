@@ -46,4 +46,4 @@ class SellerRead(BaseSeller):
 
 class SellerCreate(BaseSeller):
     password: str
-    zipcode : str 
+    zipcode : int

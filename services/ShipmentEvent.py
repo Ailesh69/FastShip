@@ -108,7 +108,7 @@ class ShipmentEventService(BaseService):
                 await add_otp(shipment.id, code)
                 if shipment.client_contact_phone:
                     send_sms.delay(
-                        to=f"+{shipment.client_contact_phone}",
+                        to=shipment.client_contact_phone,
                         body=f"Your order is arriving soon! Share OTP {code} with the delivery agent when you receive your order.",
                     )
                 else:
