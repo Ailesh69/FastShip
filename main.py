@@ -5,6 +5,7 @@ from scalar_fastapi import get_scalar_api_reference
 from Database.session import create_db_tables
 from api.router import master_router
 from core.exception import add_exception_handlers
+from config import app_settings
 from tag import APITag
 from worker.tasks import add_log
 from fastapi.middleware.cors import CORSMiddleware
@@ -40,9 +41,10 @@ app = FastAPI(
     title="FastShip",
     description="Retro pixel-art shipment tracking and delivery management API.",
     version="6.7",
-    contact={
-        "email": "REPLACE_WITH_REAL_EMAIL",
-    },
+    # No contact block: OpenAPI validates contact.email as a real address, so
+    # the "REPLACE_WITH_REAL_EMAIL" placeholder that was here made /openapi.json
+    # — and therefore /docs and /scalar — fail with a 500. Add it back with a
+    # genuine address whenever you want it published.
     openapi_tags=tags_metadata,
 )
 
@@ -50,7 +52,11 @@ add_exception_handlers(app)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    # Configurable, because the origin the browser used is not always
+    # localhost — a phone or a friend's laptop loads the frontend over the LAN
+    # IP or a tunnel hostname, and an origin missing from this list gets every
+    # request blocked before it reaches a route.
+    allow_origins=app_settings.cors_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )

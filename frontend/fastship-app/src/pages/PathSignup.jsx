@@ -1,4 +1,5 @@
 import SignupForm from '../components/SignupForm'
+import { registerUser } from '../api/auth'
 import {
   BoxIcon,
   LockIcon,
@@ -10,8 +11,9 @@ import {
 } from '../components/PixelIcons'
 
 // Role sign-up screens. Every role renders the same <SignupForm /> and differs
-// only in its title, field list and submit label — so field styling, card
-// chrome and validation stay identical across all of them.
+// only in its title, field list, submit label and the shape of the payload its
+// /register endpoint expects — so field styling, card chrome and shared
+// validation stay identical across all of them.
 
 const CUSTOMER_FIELDS = [
   { name: 'username', label: 'USERNAME:', type: 'text', icon: UserIcon, autoComplete: 'username' },
@@ -88,21 +90,67 @@ const SELLER_FIELDS = [
   },
 ]
 
+// Zip codes and capacities are INTEGER columns on the backend, so they are
+// parsed here rather than posted as the strings the inputs hold.
+const DIGITS = /^\d+$/
+
+const zipList = (raw) =>
+  raw
+    .split(',')
+    .map((z) => z.trim())
+    .filter(Boolean)
+
+const badZips = (raw) => zipList(raw).some((z) => !DIGITS.test(z))
+
 const ROLE_FORMS = {
   client: {
     title: 'CUSTOMER SIGNUP',
     fields: CUSTOMER_FIELDS,
     submitLabel: '[ CREATE ACCOUNT ]',
+    // The form calls it USERNAME; ClientCreate calls it name.
+    toPayload: (v) => ({
+      name: v.username.trim(),
+      email: v.email.trim(),
+      password: v.password,
+    }),
   },
   partner: {
     title: 'DELIVERY PARTNER SIGNUP',
     fields: DELIVERY_FIELDS,
     submitLabel: '[ SIGN UP ]',
+    toPayload: (v) => ({
+      name: v.name.trim(),
+      email: v.email.trim(),
+      password: v.password,
+      zipcode: Number(v.baseZip.trim()),
+      max_handling_capacity: Number(v.capacity.trim()),
+      serviceable_zip_codes: zipList(v.serviceZips).map(Number),
+    }),
+    validate: (v) => {
+      const e = {}
+      if (v.baseZip.trim() && !DIGITS.test(v.baseZip.trim())) e.baseZip = 'DIGITS ONLY'
+      if (v.capacity.trim() && !DIGITS.test(v.capacity.trim())) e.capacity = 'DIGITS ONLY'
+      else if (v.capacity.trim() && Number(v.capacity) < 1) e.capacity = 'MUST BE AT LEAST 1'
+      if (v.serviceZips.trim() && badZips(v.serviceZips))
+        e.serviceZips = 'COMMA-SEPARATED ZIP CODES, DIGITS ONLY'
+      return e
+    },
   },
   seller: {
     title: 'SELLER SIGNUP',
     fields: SELLER_FIELDS,
     submitLabel: '[ SIGN UP ]',
+    toPayload: (v) => ({
+      name: v.name.trim(),
+      email: v.email.trim(),
+      password: v.password,
+      zipcode: Number(v.zip.trim()),
+    }),
+    validate: (v) => {
+      const e = {}
+      if (v.zip.trim() && !DIGITS.test(v.zip.trim())) e.zip = 'DIGITS ONLY'
+      return e
+    },
   },
 }
 
@@ -115,6 +163,8 @@ function PathSignup({ role: roleKey }) {
         title={role.title}
         fields={role.fields}
         submitLabel={role.submitLabel}
+        validateFields={role.validate}
+        onSubmit={(values) => registerUser(role.toPayload(values), roleKey)}
       />
     )
   }

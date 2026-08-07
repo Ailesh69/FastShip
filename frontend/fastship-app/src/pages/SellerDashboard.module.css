@@ -99,3 +99,72 @@
   color: #ffd2c6;
   text-shadow: 0 0 8px rgba(255, 122, 92, 0.9);
 }
+
+/* Loading / error / empty message shown in place of the table body.
+   Same treatment as the partner dashboard's .empty so the two panels read
+   identically when they have nothing to show. */
+.notice {
+  padding: 46px 20px;
+  text-align: center;
+  font-family: var(--font-pixel);
+  font-size: 11px;
+  line-height: 1.8;
+  color: #8fb6b4;
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.35);
+}
+
+.noticeError {
+  color: #ff9b83;
+  text-shadow: 0 0 8px rgba(255, 122, 92, 0.5);
+}
+
+/* ---- inline VIEW DETAIL row ----
+   The shipment timeline expands underneath its own row rather than opening a
+   modal, so it reuses the table it belongs to instead of introducing a second
+   overlay surface to the app. */
+.detailCell {
+  padding: 0 14px 14px;
+  background: rgba(8, 26, 38, 0.55);
+}
+
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 2px solid rgba(34, 211, 238, 0.28);
+}
+
+.entry {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+
+.entryStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-pixel);
+  font-size: 8px;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.entryMeta {
+  font-family: var(--font-pixel);
+  font-size: 7px;
+  line-height: 1.5;
+  color: #8fb6b4;
+  white-space: nowrap;
+}
+
+.entryBody {
+  font-family: var(--font-term);
+  font-size: 16px;
+  line-height: 1.3;
+  color: #cfe0ef;
+}

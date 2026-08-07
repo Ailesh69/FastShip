@@ -5,11 +5,11 @@ from core.exception import BadRequest, EntityNotFound
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from jinja2 import Environment, FileSystemLoader
-from schemas.DeliveryPartner import DeliveryPartner
 from schemas.Tag import TagName
-from schemas.shipment import Shipment, ShipmentCreate, ShipmentUpdate, ShipmentRead
+from schemas.shipment import ShipmentCreate, ShipmentUpdate, ShipmentRead
 from api.Dependencies.ShipmentDependency import SessionDep, Shipment_ServiceDep
 from api.Dependencies.SellerDependency import CurrSellerDep
+from api.Dependencies.DeliveryDependency import CurrPartnerDep
 from config import app_settings
 from tag import APITag
 from utils import TEMPLATE_DIR
@@ -27,7 +27,7 @@ router = APIRouter(
     "/",
     name="Get Shipment",
     description="Retrieve a **shipment** by its ID including timeline and delivery partner details.",
-    response_model=Shipment,
+    response_model=ShipmentRead,
     responses={
         200: {"description": "Shipment retrieved successfully"},
         404: {"description": "Shipment not found"},
@@ -70,6 +70,7 @@ async def get_tracking(id: UUID, service: Shipment_ServiceDep):
     name="Create Shipment",
     description="Submit a new **shipment** for delivery. A delivery partner will be automatically assigned.",
     status_code=201,
+    response_model=ShipmentRead,
     responses={
         201: {
             "description": "Shipment created successfully",
@@ -90,7 +91,7 @@ async def get_tracking(id: UUID, service: Shipment_ServiceDep):
 )
 async def submit_shipment(
     shipment: ShipmentCreate, service: Shipment_ServiceDep, seller: CurrSellerDep
-) -> Shipment:
+):
     return await service.add(shipment, seller)
 
 
@@ -98,7 +99,7 @@ async def submit_shipment(
     "/",
     name="Update Shipment",
     description="Update a **shipment's** status or estimated delivery. Only the assigned delivery partner can update.",
-    response_model=Shipment,
+    response_model=ShipmentRead,
     responses={
         200: {"description": "Shipment updated successfully"},
         400: {"description": "No data provided to update"},
@@ -108,7 +109,7 @@ async def submit_shipment(
 async def update_shipment(
     id: UUID,
     shipment_update: ShipmentUpdate,
-    partner: DeliveryPartner,
+    partner: CurrPartnerDep,
     service: Shipment_ServiceDep,
 ):
     update = shipment_update.model_dump(exclude_none=True)
@@ -141,7 +142,7 @@ async def review_page(token: str, request: Request, service: Shipment_ServiceDep
         request=request,
         name="review.html",
         context={
-            "review_url": f"{app_settings.APP_BASE_URL}/shipment/review?token={token}"
+            "review_url": f"{app_settings.base_url}/shipment/review?token={token}"
         },
     )
 

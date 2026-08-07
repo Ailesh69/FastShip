@@ -8,6 +8,7 @@ from tag import APITag
 from utils import TEMPLATE_DIR
 from Database.redis import add_jti_to_blacklist
 from schemas.seller import SellerCreate, SellerRead
+from schemas.shipment import ShipmentRead
 from schemas.Token import Token
 from api.Dependencies.SellerDependency import Seller_ServiceDep, _get_access_token , CurrSellerDep
 
@@ -169,3 +170,19 @@ async def logout_seller(token_data: Annotated[dict, Depends(_get_access_token)])
 )
 async def get_seller_me(seller: CurrSellerDep):
     return seller
+
+
+@router.get(
+    "/shipments",
+    name="List Seller Shipments",
+    # Shipment has no created_at column; estimated_delivery is set to creation
+    # time + 3 days, so ordering by it descending puts the newest first.
+    description="List every **shipment** created by the authenticated seller, newest first.",
+    response_model=list[ShipmentRead],
+    responses={
+        200: {"description": "Shipments retrieved successfully"},
+        401: {"description": "Invalid or expired token"},
+    },
+)
+async def get_seller_shipments(seller: CurrSellerDep):
+    return sorted(seller.shipments, key=lambda s: s.estimated_delivery, reverse=True)

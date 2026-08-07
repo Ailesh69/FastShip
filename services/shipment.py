@@ -2,7 +2,7 @@ from uuid import UUID
 from typing import TYPE_CHECKING
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timedelta
-from Database.redis import add_otp
+from Database.redis import verify_otp
 from services.Base import BaseService
 from schemas.shipment import Shipment, ShipmentCreate, ShipmentStatus, ShipmentUpdate
 from services.DeliveryPartner import DeliveryPartnerService
@@ -62,17 +62,23 @@ class ShipmentService(BaseService):
         if shipment.delivery_partner_id != partner.id:
             raise ClientNotAuthorized()
         if shipment_update.status == ShipmentStatus.delivered:
-            code = await add_otp(shipment.id)
+            # Read the code stored when the shipment went out for delivery —
+            # add_otp() writes one and takes two arguments, so calling it here
+            # both raised a TypeError and would have overwritten the code.
+            code = await verify_otp(shipment.id)
             if code != shipment_update.verification_code:
-                raise ClientNotAuthorized()
-        update = shipment_update.model_dump(exclude_none=True, exclude=["verification_code"])
+                raise ClientNotAuthorized("Verification code is incorrect")
+        # estimated_delivery lives on the shipment row, not on a timeline event,
+        # so it is applied separately and kept out of the event kwargs —
+        # ShipmentEventService.add() has no such parameter and would raise.
         if shipment_update.estimated_delivery:
             shipment.estimated_delivery = shipment_update.estimated_delivery
-        if len(update) > 1 or not shipment_update.estimated_delivery:
-            await self.event_service.add(
-                shipment=shipment,
-                **update,
-            )
+
+        event_fields = shipment_update.model_dump(
+            exclude_none=True, exclude={"verification_code", "estimated_delivery"}
+        )
+        if event_fields:
+            await self.event_service.add(shipment=shipment, **event_fields)
         return await self._update(shipment)
 
     def validate_review_token(self, token: str) -> dict:

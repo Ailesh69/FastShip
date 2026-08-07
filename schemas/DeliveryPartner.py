@@ -55,7 +55,10 @@ class BaseDP(BaseModel):
 
 
 class DPRead(BaseDP):
-    pass
+    # Matches what SellerRead and ClientRead already expose, so the profile
+    # screens can show the same identity and verification state for all roles.
+    id: UUID
+    email_verified: bool
 
 
 class DPCreate(BaseDP):

@@ -84,7 +84,8 @@ class ShipmentEventService(BaseService):
                     "estimated_delivery": shipment.estimated_delivery.strftime(
                         "%d %B %Y"
                     ),
-                    "tracking_url": f"{app_settings.APP_BASE_URL}/shipment/tracking?id={shipment.id}",
+                    # The route is /shipment/track, not /shipment/tracking.
+                    "tracking_url": f"{app_settings.base_url}/shipment/track?id={shipment.id}",
                 }
             case ShipmentStatus.in_transit:
                 template = "mail_in_transit.html"
@@ -121,7 +122,7 @@ class ShipmentEventService(BaseService):
                     "shipment_id": str(shipment.id),
                     "content": shipment.content,
                     "delivered_on": now,
-                    "review_url": f"{app_settings.APP_BASE_URL}/shipment/review?token={token}",
+                    "review_url": f"{app_settings.base_url}/shipment/review?token={token}",
                 }
             case ShipmentStatus.cancelled:
                 template = "mail_cancelled.html"

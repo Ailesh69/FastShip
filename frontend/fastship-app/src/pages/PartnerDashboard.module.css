@@ -93,3 +93,10 @@
   color: #8fb6b4;
   text-shadow: 0 0 8px rgba(34, 211, 238, 0.35);
 }
+
+/* .empty carries the layout; this only recolours it when the panel is showing
+   a failed fetch rather than a genuinely empty list. */
+.emptyError {
+  color: #ff9b83;
+  text-shadow: 0 0 8px rgba(255, 122, 92, 0.5);
+}
