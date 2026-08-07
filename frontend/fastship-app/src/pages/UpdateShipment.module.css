@@ -309,3 +309,9 @@
     width: 118px;
   }
 }
+
+/* .toast carries the layout; this only recolours it for failures. */
+.toastError {
+  color: #ff9b83;
+  text-shadow: 0 0 8px rgba(255, 122, 92, 0.6);
+}

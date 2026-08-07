@@ -180,3 +180,20 @@
     margin-left: 130px;
   }
 }
+
+/* Same panel as .confirm, recoloured for a failed submit. */
+.confirmError {
+  border-color: #ff7a5c;
+  background: rgba(38, 14, 10, 0.75);
+  color: #ffd2c6;
+  text-shadow: 0 0 8px rgba(255, 122, 92, 0.7);
+}
+
+/* The full UUID is what the tracking page wants, but it does not fit the pixel
+   font at panel size — VT323 keeps it on one line and readable. */
+.confirmId {
+  font-family: var(--font-term);
+  font-size: 17px;
+  letter-spacing: 0.5px;
+  text-shadow: none;
+}

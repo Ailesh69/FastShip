@@ -3,7 +3,7 @@ from schemas.shipment import Shipment
 from schemas.seller import Seller
 from schemas.DeliveryPartner import DeliveryPartner
 from sqlalchemy.ext.asyncio import AsyncSession
-from services.User import pwd_ctx
+from services.User import hash_password
 
 SELLER = {
     "name": "RainForest",
@@ -34,14 +34,15 @@ async def create_test_data(session: AsyncSession):
             email=SELLER["email"],
             zip_code=SELLER["zip_code"],
             email_verified=True,
-            password_hash=pwd_ctx.hash(SELLER["password"][:72]),
+            # hash_password truncates to 72 bytes itself.
+            password_hash=hash_password(SELLER["password"]),
         )
     )
     session.add(
         DeliveryPartner(
             name=DELIVERY_PARTNER["name"],
             email=DELIVERY_PARTNER["email"],
-            password_hash=pwd_ctx.hash(DELIVERY_PARTNER["password"][:72]),
+            password_hash=hash_password(DELIVERY_PARTNER["password"]),
             email_verified=True,
             serviceable_zip_codes=DELIVERY_PARTNER["serviceable_zip_codes"],
             max_handling_capacity=DELIVERY_PARTNER["max_handling_capacity"],

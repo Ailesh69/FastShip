@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLoadingNav } from '../context/loadingNav'
+import { getProfile } from '../api/auth'
+import { apiError } from '../api/client'
 // Same visual language as the client and partner profile editors — imported
 // rather than duplicated, so the three editors can't drift apart. `p` carries
 // the avatar/panel/row/button styles; `b` carries the read-only badge row.
@@ -8,20 +10,17 @@ import b from './PartnerProfile.module.css'
 
 // SELLER — profile editor.
 //
-// UI only: SELLER is mock data shaped EXACTLY like the /seller/me payload
-// ({ name, email, zip_code, email_verified, created_at }). Deliberately no
-// phone, address or extra sections — keeping the form matched to the schema is
-// what stops it drifting the way the client editor did.
+// Fields come from GET /seller/me — { name, email, zipcode, email_verified,
+// created_at }. Deliberately no phone, address or extra sections: keeping the
+// form matched to the schema is what stops it drifting the way the client
+// editor did.
+//
+// Saving is still local. There is no seller-update endpoint on the backend, so
+// the confirmation line says exactly that rather than implying a write.
 
-const SELLER = {
-  name: 'Dev Kapoor',
-  email: 'dev.kapoor@fastship.dev',
-  zip_code: '10001',
-  email_verified: true,
-  created_at: '2026-02-08',
-  avatar:
-    "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%23b3542b'/%3E%3Crect x='4' y='2' width='8' height='3' fill='%232f2118'/%3E%3Crect x='3' y='5' width='10' height='7' fill='%23f3cfa2'/%3E%3Crect x='5' y='7' width='2' height='2' fill='%232a1a10'/%3E%3Crect x='9' y='7' width='2' height='2' fill='%232a1a10'/%3E%3Crect x='6' y='10' width='4' height='1' fill='%23a83e2e'/%3E%3Crect x='2' y='12' width='12' height='4' fill='%23fbbf24'/%3E%3C/svg%3E",
-}
+// The API stores no avatar, so every seller starts from the same sprite.
+const DEFAULT_AVATAR =
+  "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%23b3542b'/%3E%3Crect x='4' y='2' width='8' height='3' fill='%232f2118'/%3E%3Crect x='3' y='5' width='10' height='7' fill='%23f3cfa2'/%3E%3Crect x='5' y='7' width='2' height='2' fill='%232a1a10'/%3E%3Crect x='9' y='7' width='2' height='2' fill='%232a1a10'/%3E%3Crect x='6' y='10' width='4' height='1' fill='%23a83e2e'/%3E%3Crect x='2' y='12' width='12' height='4' fill='%23fbbf24'/%3E%3C/svg%3E"
 
 const SECURITY = [
   { name: 'currentPassword', label: 'CURRENT PASSWORD:', autoComplete: 'current-password' },
@@ -34,23 +33,67 @@ const SECURITY = [
 const TEXT_ARC = 'M 26.6 148.9 A 92 92 0 1 1 193.4 148.9'
 
 const formatDate = (iso) => {
-  const d = new Date(`${iso}T00:00:00`)
+  if (!iso) return 'N/A'
+  const d = new Date(iso)
   return Number.isNaN(d.getTime())
     ? iso
     : d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase()
 }
 
-function SellerProfile({ seller = SELLER }) {
+// Outer shell: fetches /seller/me and only mounts the editor once the record
+// exists, so the form's initial state can be seeded straight from it instead of
+// being re-synced by an effect.
+function SellerProfile() {
+  const [seller, setSeller] = useState(null)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const data = await getProfile('seller')
+        if (!cancelled) setSeller(data)
+      } catch (err) {
+        if (!cancelled) setError(apiError(err, 'COULD NOT LOAD PROFILE'))
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  if (error) {
+    return (
+      <p
+        className="field-error relative z-10 my-auto text-center text-[11px] leading-[1.8]"
+        role="alert"
+      >
+        {error}
+      </p>
+    )
+  }
+  if (!seller) {
+    return (
+      <p className="relative z-10 my-auto text-center text-[11px] leading-[1.8] text-[#8fb6b4]">
+        LOADING PROFILE...
+      </p>
+    )
+  }
+  return <SellerProfileForm seller={seller} />
+}
+
+function SellerProfileForm({ seller }) {
   const { go } = useLoadingNav()
   const [values, setValues] = useState({
     fullName: seller.name,
     email: seller.email,
-    zip: seller.zip_code,
+    // The column is `zipcode`, not `zip_code`, and it is nullable.
+    zip: seller.zipcode == null ? '' : String(seller.zipcode),
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   })
-  const [photo, setPhoto] = useState(seller.avatar)
+  const [photo, setPhoto] = useState(DEFAULT_AVATAR)
   const [saved, setSaved] = useState(false)
   const fileRef = useRef(null)
   const objectUrl = useRef(null)
@@ -78,7 +121,7 @@ function SellerProfile({ seller = SELLER }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    // UI-only build — nothing is sent anywhere.
+    // Local only: the seller router exposes no profile-update endpoint.
     setSaved(true)
   }
 
@@ -214,7 +257,7 @@ function SellerProfile({ seller = SELLER }) {
 
       {saved && (
         <p className="mt-[14px] text-center text-[9px] leading-none text-fs-green">
-          CHANGES CAPTURED LOCALLY &mdash; NOT SAVED (UI ONLY)
+          CHANGES CAPTURED LOCALLY &mdash; NO SELLER UPDATE ENDPOINT YET
         </p>
       )}
     </form>

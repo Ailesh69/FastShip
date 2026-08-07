@@ -1,34 +1,37 @@
 import { useCallback, useMemo, useState } from 'react'
-import { AuthContext, readSession, STORAGE_KEY } from './auth'
+import { AuthContext, clearSession, readSession, writeSession } from './auth'
+import { getProfile, loginUser } from '../api/auth'
 
-// Holds the MOCK session. No network, no credential check — login() accepts
-// whatever it is handed. Restores from localStorage on first render so a page
-// refresh keeps the fake "logged in" state.
+// Holds the signed-in session and restores it from localStorage on first
+// render, so a refresh keeps the user logged in for as long as the token is
+// valid (the backend issues them with a 7-day expiry).
 function AuthProvider({ children }) {
   const [user, setUser] = useState(readSession)
 
-  const login = useCallback((profile) => {
-    // Real implementation would POST here and store a token instead.
+  // Async: exchanges credentials for a token, then reads the profile back so
+  // the navbar shows the account's real name rather than a guess made from the
+  // email. Throws on failure — callers render the message; nothing is stored
+  // unless BOTH calls succeed, so a failed login can't leave a half-session
+  // behind that RequireAuth would accept.
+  const login = useCallback(async (email, password, userType) => {
+    const token = await loginUser(email, password, userType)
+    // The token is passed explicitly here: it has not been written to storage
+    // yet, so the request interceptor has nothing to attach on its own.
+    const profile = await getProfile(userType, token)
+
     const session = {
-      name: profile.name ?? 'TestUser',
-      email: profile.email ?? '',
-      userType: profile.userType,
+      name: profile.name ?? email.split('@')[0],
+      email: profile.email ?? email,
+      userType,
+      token,
     }
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(session))
-    } catch {
-      // Private-mode / quota failures shouldn't break the demo flow.
-    }
+    writeSession(session)
     setUser(session)
     return session
   }, [])
 
   const logout = useCallback(() => {
-    try {
-      localStorage.removeItem(STORAGE_KEY)
-    } catch {
-      // ignore
-    }
+    clearSession()
     setUser(null)
   }, [])
 

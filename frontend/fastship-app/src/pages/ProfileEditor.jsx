@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLoadingNav } from '../context/loadingNav'
 import { useAuth } from '../context/auth'
+import { getProfile } from '../api/auth'
 import s from './ProfileEditor.module.css'
 
 // USER PROFILE EDITOR (general / customer account).
@@ -43,10 +44,14 @@ const TEXT_ARC = 'M 26.6 148.9 A 92 92 0 1 1 193.4 148.9'
 
 function ProfileEditor() {
   const { go } = useLoadingNav()
-  // Greeting + photo come from the mock session, not a prop — the route no
-  // longer passes one.
+  // The session seeds the fields so the form is never blank on first paint;
+  // GET /client/me then replaces them with the stored record.
   const { user } = useAuth()
-  const [values, setValues] = useState(() => ({ ...INITIAL, email: user?.email ?? '' }))
+  const [values, setValues] = useState(() => ({
+    ...INITIAL,
+    fullName: user?.name ?? '',
+    email: user?.email ?? '',
+  }))
   const [photo, setPhoto] = useState(user?.avatar ?? DEFAULT_AVATAR)
   const fileRef = useRef(null)
   const objectUrl = useRef(null)
@@ -58,6 +63,26 @@ function ProfileEditor() {
     },
     [],
   )
+
+  // Only the two schema fields are overwritten — the password boxes are local
+  // and must survive the profile landing mid-edit.
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const profile = await getProfile('client')
+        if (!cancelled) {
+          setValues((v) => ({ ...v, fullName: profile.name, email: profile.email }))
+        }
+      } catch {
+        // Leave the session-seeded values in place; the navbar already shows
+        // the same name and there is nothing useful to say here.
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const set = (name) => (e) => setValues((v) => ({ ...v, [name]: e.target.value }))
 
@@ -71,8 +96,7 @@ function ProfileEditor() {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    // UI-only build — nothing is sent anywhere.
-    console.log('Profile changes (not saved):', values)
+    // Local only: the client router exposes no profile-update endpoint.
   }
 
   return (

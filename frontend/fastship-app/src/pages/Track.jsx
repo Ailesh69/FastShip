@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import FieldRow from '../components/FieldRow'
 import { BoxIcon } from '../components/PixelIcons'
+import { TRACKING_URL } from '../api/client'
 
 // TRACK ORDER entry page.
 //
@@ -13,9 +14,6 @@ import { BoxIcon } from '../components/PixelIcons'
 
 const CARD_W = 470
 const PAD_X = 30
-
-// Backend-rendered tracking page — different server, not a React route.
-const TRACKING_BASE = 'http://localhost:8000/shipment/track'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -47,7 +45,7 @@ function Track() {
       setWarning("THAT DOESN'T LOOK LIKE A SHIPMENT ID - CHECKING ANYWAY...")
     }
 
-    window.location.href = `${TRACKING_BASE}?id=${encodeURIComponent(id)}`
+    window.location.assign(TRACKING_URL(id))
   }
 
   return (

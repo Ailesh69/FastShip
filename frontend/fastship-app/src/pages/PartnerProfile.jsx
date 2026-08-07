@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLoadingNav } from '../context/loadingNav'
 import ZipChipInput from '../components/ZipChipInput'
+import { getProfile } from '../api/auth'
+import { apiError } from '../api/client'
 // Same visual language as the client Profile Editor — imported rather than
 // duplicated, so the two editors can't drift apart. Partner-only extras
 // (badges, chip row) live in the local module below.
@@ -9,21 +11,16 @@ import s from './PartnerProfile.module.css'
 
 // DELIVERY PARTNER — profile editor.
 //
-// UI only: PARTNER is mock data shaped like the API payload
-// ({ name, email, zip_code, max_handling_capacity, serviceable_zip_codes,
-//    email_verified, created_at }). Save just shows a local confirmation.
+// Fields come from GET /partner/me — { id, name, email, zipcode,
+// max_handling_capacity, serviceable_zip_codes, email_verified }.
+//
+// Saving is still local. A partner-update endpoint does exist (POST /partner/)
+// but its DPUpdate schema has no `name` field, so wiring this form to it would
+// quietly discard a name change; the confirmation line says so instead.
 
-const PARTNER = {
-  name: 'Rhea Malhotra',
-  email: 'rhea.m@fastship.dev',
-  zip_code: '94105',
-  max_handling_capacity: 25,
-  serviceable_zip_codes: ['94105', '94107', '94110', '94158'],
-  email_verified: true,
-  created_at: '2026-03-14',
-  avatar:
-    "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%232f7d6b'/%3E%3Crect x='4' y='2' width='8' height='3' fill='%23a8532c'/%3E%3Crect x='3' y='5' width='10' height='7' fill='%23f3cfa2'/%3E%3Crect x='5' y='7' width='2' height='2' fill='%232a1a10'/%3E%3Crect x='9' y='7' width='2' height='2' fill='%232a1a10'/%3E%3Crect x='6' y='10' width='4' height='1' fill='%23a83e2e'/%3E%3Crect x='2' y='12' width='12' height='4' fill='%237de87e'/%3E%3C/svg%3E",
-}
+// The API stores no avatar, so every partner starts from the same sprite.
+const DEFAULT_AVATAR =
+  "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%232f7d6b'/%3E%3Crect x='4' y='2' width='8' height='3' fill='%23a8532c'/%3E%3Crect x='3' y='5' width='10' height='7' fill='%23f3cfa2'/%3E%3Crect x='5' y='7' width='2' height='2' fill='%232a1a10'/%3E%3Crect x='9' y='7' width='2' height='2' fill='%232a1a10'/%3E%3Crect x='6' y='10' width='4' height='1' fill='%23a83e2e'/%3E%3Crect x='2' y='12' width='12' height='4' fill='%237de87e'/%3E%3C/svg%3E"
 
 const SECURITY = [
   { name: 'currentPassword', label: 'CURRENT PASSWORD:', autoComplete: 'current-password' },
@@ -33,26 +30,65 @@ const SECURITY = [
 
 const TEXT_ARC = 'M 26.6 148.9 A 92 92 0 1 1 193.4 148.9'
 
-const formatDate = (iso) => {
-  const d = new Date(`${iso}T00:00:00`)
-  return Number.isNaN(d.getTime())
-    ? iso
-    : d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase()
+// Outer shell: fetches /partner/me and only mounts the editor once the record
+// exists, so the form's initial state can be seeded straight from it instead of
+// being re-synced by an effect.
+function PartnerProfile() {
+  const [partner, setPartner] = useState(null)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const data = await getProfile('partner')
+        if (!cancelled) setPartner(data)
+      } catch (err) {
+        if (!cancelled) setError(apiError(err, 'COULD NOT LOAD PROFILE'))
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  if (error) {
+    return (
+      <p
+        className="field-error relative z-10 my-auto text-center text-[11px] leading-[1.8]"
+        role="alert"
+      >
+        {error}
+      </p>
+    )
+  }
+  if (!partner) {
+    return (
+      <p className="relative z-10 my-auto text-center text-[11px] leading-[1.8] text-[#8fb6b4]">
+        LOADING PROFILE...
+      </p>
+    )
+  }
+  return <PartnerProfileForm partner={partner} />
 }
 
-function PartnerProfile({ partner = PARTNER }) {
+function PartnerProfileForm({ partner }) {
   const { go } = useLoadingNav()
   const [values, setValues] = useState({
     fullName: partner.name,
     email: partner.email,
-    baseZip: partner.zip_code,
-    capacity: String(partner.max_handling_capacity),
+    // The column is `zipcode`, not `zip_code`.
+    baseZip: partner.zipcode == null ? '' : String(partner.zipcode),
+    capacity: String(partner.max_handling_capacity ?? ''),
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   })
-  const [zips, setZips] = useState(partner.serviceable_zip_codes)
-  const [photo, setPhoto] = useState(partner.avatar)
+  // Integers on the wire; the chip input is a string editor.
+  const [zips, setZips] = useState(() =>
+    (partner.serviceable_zip_codes ?? []).map(String),
+  )
+  const [photo, setPhoto] = useState(DEFAULT_AVATAR)
   const [saved, setSaved] = useState(false)
   const fileRef = useRef(null)
   const objectUrl = useRef(null)
@@ -80,7 +116,7 @@ function PartnerProfile({ partner = PARTNER }) {
   const handleSubmit = (e) => {
     e.preventDefault()
     // UI-only build — nothing is sent anywhere.
-    console.log('Partner profile (not saved):', { ...values, serviceable_zip_codes: zips })
+    // Local only — see the note at the top of this file on DPUpdate.
     setSaved(true)
   }
 
@@ -124,8 +160,12 @@ function PartnerProfile({ partner = PARTNER }) {
             <span className={`${s.badge} ${partner.email_verified ? s.badgeOk : s.badgeNo}`}>
               EMAIL VERIFIED: {partner.email_verified ? '✓' : '✗'}
             </span>
+            {/* Capacity replaces the seller card's MEMBER SINCE: DPRead has no
+                join date to show (the column is spelled created_At and is not
+                part of the schema), and remaining capacity is the number a
+                partner actually acts on. */}
             <span className={`${s.badge} ${s.badgeInfo}`}>
-              MEMBER SINCE: {formatDate(partner.created_at)}
+              CAPACITY: {partner.max_handling_capacity ?? '?'}
             </span>
           </div>
         </div>
@@ -248,7 +288,7 @@ function PartnerProfile({ partner = PARTNER }) {
 
       {saved && (
         <p className="mt-[14px] text-center text-[9px] leading-none text-fs-green">
-          CHANGES CAPTURED LOCALLY &mdash; NOT SAVED (UI ONLY)
+          CHANGES CAPTURED LOCALLY &mdash; NOT SENT TO THE SERVER
         </p>
       )}
     </form>

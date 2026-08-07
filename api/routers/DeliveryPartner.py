@@ -8,6 +8,7 @@ from tag import APITag
 from utils import TEMPLATE_DIR
 from Database.redis import add_jti_to_blacklist
 from schemas.DeliveryPartner import DPCreate, DPRead, DPUpdate
+from schemas.shipment import ShipmentRead
 from schemas.Token import Token
 from api.Dependencies.DeliveryDependency import (
     CurrPartnerDep,
@@ -190,3 +191,17 @@ async def update_partner(
 )
 async def get_partner_me(partner: CurrPartnerDep):
     return partner
+
+
+@router.get(
+    "/shipments",
+    name="List Partner Shipments",
+    description="List every **shipment** assigned to the authenticated delivery partner, newest first.",
+    response_model=list[ShipmentRead],
+    responses={
+        200: {"description": "Shipments retrieved successfully"},
+        401: {"description": "Invalid or expired token"},
+    },
+)
+async def get_partner_shipments(partner: CurrPartnerDep):
+    return sorted(partner.shipments, key=lambda s: s.estimated_delivery, reverse=True)

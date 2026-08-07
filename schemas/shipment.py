@@ -92,12 +92,30 @@ class ShipmentCreate(BaseShipment):
         return self
 
 
+class ShipmentPartnerRead(SQLModel):
+    """The assigned partner as seen from a shipment — name only, no contact
+    details or capacity, since sellers read this off their dashboard."""
+
+    id: UUID
+    name: str
+
+
 class ShipmentRead(BaseShipment):
     id: UUID
     timeline: list["ShipmentEvent"]
     estimated_delivery: datetime
     tags: list[Tag]
     orders: list["OrderRead"]
+    # Scalars below were already exposed by the endpoints that returned the
+    # `Shipment` table model directly; they are declared here so those routes
+    # can move to this schema (and gain `timeline`/`tags`) without dropping
+    # anything a caller already had.
+    status: ShipmentStatus | None = None
+    client_contact_email: EmailStr | None = None
+    client_contact_phone: str | None = None
+    seller_id: UUID | None = None
+    delivery_partner_id: UUID | None = None
+    delivery_partner: ShipmentPartnerRead | None = None
 
 
 class ShipmentUpdate(BaseModel):
