@@ -5,6 +5,8 @@ import {
   LoadingNavContext,
   MAX_MS,
   MIN_MS,
+  WARP_MS,
+  WARP_SWAP_MS,
   jitteredCurve,
   sampleCurve,
 } from './loadingNav'
@@ -12,12 +14,14 @@ import {
 // Route transitions with a simulated loading screen.
 //
 // Anything that navigates internally calls `go(path)` instead of routing
-// directly. That shows the overlay over the CURRENT page, runs a fake progress
-// count to 100%, and only then swaps in the destination and fades out — so the
-// destination never renders behind the overlay while it counts.
+// directly. That shows an overlay over the CURRENT page and only swaps in the
+// destination once the overlay has (at least visually) covered it — so the
+// destination never renders behind the overlay while it's still transparent.
 //
-// The progress is deliberately fake: driven by requestAnimationFrame against a
-// randomised 3–6s duration, never by real asset or network timing.
+// Every call picks one of two overlay variants at random, independently of
+// the destination or any other state: the turret/percentage loader (2-3s,
+// unchanged from before) or the fast warp dive (fixed ~550ms). Whichever is
+// picked drives its own wait — the two never share a timer.
 function LoadingNavProvider({ children }) {
   const navigate = useNavigate()
   const { pathname } = useLocation()
@@ -25,15 +29,18 @@ function LoadingNavProvider({ children }) {
   const [destination, setDestination] = useState(null) // non-null while loading
   const [pct, setPct] = useState(0)
   const [fading, setFading] = useState(false)
+  const [variant, setVariant] = useState(null) // 'gun' | 'warp'
 
   const rafId = useRef(0)
   const timeoutId = useRef(0)
+  const warpSwapId = useRef(0)
   const busy = useRef(false)
 
   useEffect(
     () => () => {
       cancelAnimationFrame(rafId.current)
       clearTimeout(timeoutId.current)
+      clearTimeout(warpSwapId.current)
     },
     [],
   )
@@ -44,13 +51,28 @@ function LoadingNavProvider({ children }) {
       if (!to || busy.current || to === pathname) return
       busy.current = true
 
-      const duration = MIN_MS + Math.random() * (MAX_MS - MIN_MS)
-      const curve = jitteredCurve()
-      const startedAt = performance.now()
-
+      const chosen = Math.random() < 0.5 ? 'gun' : 'warp'
+      setVariant(chosen)
       setDestination(to)
       setFading(false)
       setPct(0)
+
+      if (chosen === 'warp') {
+        // Swap the route at the flash's peak brightness, when full-white
+        // coverage hides the DOM change, then let the overlay's own
+        // self-contained CSS timeline resolve before clearing state.
+        warpSwapId.current = setTimeout(() => navigate(to), WARP_SWAP_MS)
+        timeoutId.current = setTimeout(() => {
+          setDestination(null)
+          setVariant(null)
+          busy.current = false
+        }, WARP_MS)
+        return
+      }
+
+      const duration = MIN_MS + Math.random() * (MAX_MS - MIN_MS)
+      const curve = jitteredCurve()
+      const startedAt = performance.now()
 
       const tick = (now) => {
         const t = Math.min(1, (now - startedAt) / duration)
@@ -71,6 +93,7 @@ function LoadingNavProvider({ children }) {
           setDestination(null)
           setFading(false)
           setPct(0)
+          setVariant(null)
           busy.current = false
         }, FADE_MS)
       }
@@ -82,7 +105,7 @@ function LoadingNavProvider({ children }) {
 
   return (
     <LoadingNavContext.Provider
-      value={{ go, destination, pct, fading, active: destination !== null }}
+      value={{ go, destination, pct, fading, variant, active: destination !== null }}
     >
       {children}
     </LoadingNavContext.Provider>

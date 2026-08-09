@@ -1,4 +1,5 @@
 import PixelArt from './PixelArt'
+import { SPARKLE, SPARKLE_PALETTE, SPARKLE_TEAL_PALETTE } from './pixelSpriteAssets'
 
 // Scattered 8-bit background sprites. Every position is a percentage taken off
 // the reference art, so the whole field scales with the viewport instead of
@@ -83,28 +84,8 @@ const GEAR = [
 ]
 const GEAR_PALETTE = { G: '#fbbf24' }
 
-// Four-point sparkle / diamond. Shared by BOTH ambient sparkles in the scene
-// (bottom-right, and the one on the right-hand grid) so they are the same
-// silhouette and only differ by colour and scale.
-const SPARKLE = [
-  '.......S.......',
-  '.......S.......',
-  '......SSS......',
-  '......SSS......',
-  '.....SSSSS.....',
-  '....SSSSSSS....',
-  '..SSSSSSSSSSS..',
-  'SSSSSSSSSSSSSSS',
-  '..SSSSSSSSSSS..',
-  '....SSSSSSS....',
-  '.....SSSSS.....',
-  '......SSS......',
-  '......SSS......',
-  '.......S.......',
-  '.......S.......',
-]
-const SPARKLE_PALETTE = { S: '#8b8fa8' } // bottom-right: muted lavender
-const SPARKLE_TEAL_PALETTE = { S: '#22d3ee' } // right-hand grid: teal, matches its neighbours
+// Four-point sparkle / diamond, shared by both ambient sparkles in the scene
+// and (via pixelSpriteAssets.js) the warp transition's particle burst.
 
 /* ============================ LAYOUTS ============================
 

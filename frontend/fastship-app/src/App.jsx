@@ -4,6 +4,7 @@ import PixelSprites from './components/PixelSprites'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import LoadingOverlay from './components/LoadingOverlay'
+import WarpOverlay from './components/WarpOverlay'
 import LoadingNavProvider from './context/LoadingNavProvider'
 import AuthProvider from './context/AuthProvider'
 import { useAuth } from './context/auth'
@@ -188,8 +189,11 @@ function App() {
     <AuthProvider>
       <LoadingNavProvider>
         <Shell />
-        {/* transition screen — above everything, blocks interaction while active */}
+        {/* transition screens — above everything, blocks interaction while
+            active. Which one shows is picked at random per-navigation
+            (see LoadingNavProvider); only one is ever active at a time. */}
         <LoadingOverlay />
+        <WarpOverlay />
       </LoadingNavProvider>
     </AuthProvider>
   )
