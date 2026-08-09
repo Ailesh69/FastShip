@@ -23,9 +23,9 @@ function CyclingCaption() {
 }
 
 function LoadingOverlay() {
-  const { active, pct, fading, destination } = useLoadingNav()
+  const { active, pct, fading, destination, variant } = useLoadingNav()
 
-  if (!active) return null
+  if (!active || variant !== 'gun') return null
 
   return (
     <div

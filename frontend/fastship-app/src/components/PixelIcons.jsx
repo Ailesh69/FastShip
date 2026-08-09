@@ -1,4 +1,5 @@
 import PixelArt from './PixelArt'
+import { STAR, STAR_PALETTE } from './pixelSpriteAssets'
 
 // The three stat-card sprites, drawn pixel-by-pixel to match the reference art.
 
@@ -490,19 +491,8 @@ export function MarketStall({ scale = 6 }) {
 
 /* ---------------- 1.2K+ 5-STAR REVIEWS: five-star cluster ----------------
    Three stars across the top (the middle one larger) and two tucked beneath,
-   exactly as they sit in the reference. */
-const STAR = [
-  '....Y....',
-  '....Y....',
-  '...YYY...',
-  'YYYYYYYYY',
-  '.YYYYYYY.',
-  '..YYYYY..',
-  '..YYYYY..',
-  '.YY...YY.',
-  '.Y.....Y.',
-]
-const STAR_PALETTE = { Y: '#fbbf24' }
+   exactly as they sit in the reference. STAR/STAR_PALETTE live in
+   pixelSpriteAssets.js (WarpOverlay reuses the same sprite for its burst). */
 
 // Each star twinkles on its own clock so the cluster shimmers rather than
 // pulsing as one block.
