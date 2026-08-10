@@ -1,112 +1,44 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Verify Your Email</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-            font-family: Arial, sans-serif;
-            color: #333;
-        }
-        .wrapper {
-            max-width: 600px;
-            margin: 40px auto;
-            background-color: #ffffff;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .header {
-            background-color: #1a73e8;
-            padding: 32px 24px;
-            text-align: center;
-        }
-        .header h1 {
-            margin: 0;
-            color: #ffffff;
-            font-size: 24px;
-            letter-spacing: 1px;
-        }
-        .header p {
-            margin: 6px 0 0;
-            color: #d0e4ff;
-            font-size: 13px;
-        }
-        .body {
-            padding: 32px 24px;
-            text-align: center;
-        }
-        .icon {
-            font-size: 48px;
-            margin-bottom: 16px;
-        }
-        .body h2 {
-            margin: 0 0 12px;
-            font-size: 22px;
-            color: #222;
-        }
-        .body p {
-            line-height: 1.6;
-            font-size: 15px;
-            color: #555;
-            margin: 0 0 24px;
-        }
-        .btn {
-            display: inline-block;
-            background-color: #1a73e8;
-            color: #ffffff;
-            padding: 14px 36px;
-            border-radius: 4px;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 15px;
-        }
-        .note {
-            margin-top: 28px;
-            font-size: 12px;
-            color: #aaa;
-            line-height: 1.6;
-        }
-        .footer {
-            background-color: #f9f9f9;
-            border-top: 1px solid #eee;
-            text-align: center;
-            padding: 20px 24px;
-            font-size: 12px;
-            color: #aaa;
-        }
-    </style>
-</head>
-<body>
-    <div class="wrapper">
-        <div class="header">
-            <h1>FastShip Deliveries</h1>
-            <p>Account Verification</p>
+{% extends "_mail_base.html" %}
+{% import "_mail_parts.html" as p %}
+
+{% block accent %}#22d3ee{% endblock %}
+{% block title %}Verify Your Email{% endblock %}
+{% block brand_sub %}ACCOUNT VERIFICATION{% endblock %}
+{% block preview %}One click to activate your FastShip account.{% endblock %}
+{% block eyebrow %}VERIFY YOUR EMAIL{% endblock %}
+{% block heading %}WELCOME, {{ username | upper }}{% endblock %}
+
+{% block lede %}
+Thanks for signing up with FastShip. Confirm this address to activate your
+account and start shipping.
+{% endblock %}
+
+{# No detail table on this one — there is nothing to tabulate, and an empty
+   bordered panel would just be noise. #}
+{% block details %}{% endblock %}
+
+{% block after_details %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td class="fs-pad" align="center" style="padding:28px 34px 0;">
+      {{ p.button(verification_url, 'VERIFY MY EMAIL', fill='#22d3ee') }}
+    </td>
+  </tr>
+  <tr>
+    <td class="fs-pad" style="padding:24px 34px 0;">
+      {% call p.notice('#1e6f7a') %}
+        <div style="font-family:{{ p.F_PIXEL }}; font-size:9px; letter-spacing:1px; color:#7f93ad; padding-bottom:12px;">[ BUTTON NOT WORKING? ]</div>
+        <div style="font-family:{{ p.F_TERM }}; font-size:18px; line-height:1.45; color:#c3d3e6;">
+          Copy this link into your browser:<br />
+          <a href="{{ verification_url }}" target="_blank" style="color:#22d3ee; word-break:break-all;">{{ verification_url }}</a>
         </div>
+      {% endcall %}
+    </td>
+  </tr>
+</table>
+{% endblock %}
 
-        <div class="body">
-            <div class="icon">✉️</div>
-            <h2>Hi {{ username }}, verify your email</h2>
-            <p>
-                Thanks for signing up with FastShip! Click the button below to verify your
-                email address and activate your account.
-            </p>
-
-            <a href="{{ verification_url }}" class="btn">Verify Email Address</a>
-
-            <p class="note">
-                This link expires in 24 hours. If you didn't create a FastShip account,
-                you can safely ignore this email.
-            </p>
-        </div>
-
-        <div class="footer">
-            &copy; 2026 FastShip Deliveries &nbsp;|&nbsp; This is an automated email, please do not reply.
-        </div>
-    </div>
-</body>
-</html>
+{% block outro %}
+This link expires in 3 days. If you didn't create a FastShip account, you can
+safely ignore this email.
+{% endblock %}

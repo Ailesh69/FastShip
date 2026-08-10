@@ -1,5 +1,20 @@
-﻿.wsl-venv/
+.wsl-venv/
 __pycache__/
 *.pyc
 *.log
 .venv/
+venv/
+
+# Secrets. .env holds the JWT signing key, the database password and the mail
+# and Twilio credentials — it must never be committed. Use .env.example as the
+# template for a local one.
+.env
+.env.*
+!.env.example
+
+# Redis snapshot: a dump of live application state, including issued OTPs.
+dump.rdb
+
+# macOS / editor cruft
+.DS_Store
+.idea/

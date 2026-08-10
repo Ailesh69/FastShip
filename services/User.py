@@ -1,5 +1,5 @@
 from uuid import UUID
-from worker.tasks import send_email_with_template, send_sms
+from services.mailer import send_templated_email
 from sqlmodel import select
 from core.exception import BadRequest, EntityNotFound, BadCredentials, ClientNotAuthorized, InvalidToken
 import bcrypt
@@ -7,7 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config import app_settings
 from services.Base import BaseService
 from schemas.User import User
-from utils import generate_access_token, generate_url_safe_token, decode_url_safe_token
+from utils import (
+    EMAIL_VERIFY_EXPIRY,
+    PASSWORD_RESET_EXPIRY,
+    generate_access_token,
+    generate_url_safe_token,
+    decode_url_safe_token,
+)
 
 
 # bcrypt is called directly rather than through passlib. passlib 1.7.4 is its
@@ -51,22 +57,28 @@ class UserService(BaseService):
         user = self.model(**data, password_hash=hash_password(data["password"]))
         user = await self._add(user)
         token = generate_url_safe_token({"email": user.email, "id": str(user.id)})
-        send_email_with_template.delay(
+        send_templated_email(
             recipients=[user.email],
             subject="Verify Your Account With Fastship",
             context={
                 "username": user.name,
-                "verification_url": f"{app_settings.base_url}/{router_prefix.lstrip('/')}/verify?token={token}",
+                "verification_url": f"{app_settings.link_base()}/{router_prefix.lstrip('/')}/verify?token={token}",
             },
             template_name="mail_verify.html",
         )
         return user
 
     async def _verify_email(self, token: str):
-        token_data = decode_url_safe_token(token)
+        token_data = decode_url_safe_token(token, expiry=EMAIL_VERIFY_EXPIRY)
         if not token_data:
-            raise BadRequest("Token Invalid")
+            raise BadRequest("Verification link is invalid or has expired")
+        # A signed token for an account that has since been deleted, or one
+        # issued by a different role's router, resolves to nothing here. That
+        # used to be an AttributeError on None — a 500 for what is really a bad
+        # link.
         user = await self._get(UUID(token_data["id"]))
+        if user is None:
+            raise BadRequest("Verification link is invalid or has expired")
         user.email_verified = True
         await self._update(user)
 
@@ -96,18 +108,20 @@ class UserService(BaseService):
         if user is None:
             raise EntityNotFound("No account found with that email")
         token = generate_url_safe_token({"id": str(user.id)}, salt="password_reset")
-        send_email_with_template.delay(
+        send_templated_email(
             recipients=[user.email],
             subject="Fastship Password Reset",
             context={
                 "username": user.name,
-                "reset_url": f"{app_settings.base_url}/{router_prefix.lstrip('/')}/reset_password?token={token}",
+                "reset_url": f"{app_settings.link_base()}/{router_prefix.lstrip('/')}/reset_password?token={token}",
             },
             template_name="mail_reset_password.html",
         )
 
     def validate_password_reset_token(self, token: str) -> dict:
-        token_data = decode_url_safe_token(token, salt="password_reset")
+        token_data = decode_url_safe_token(
+            token, salt="password_reset", expiry=PASSWORD_RESET_EXPIRY
+        )
         if token_data is None:
             raise InvalidToken("Reset link is invalid or has expired")
         return token_data
@@ -119,5 +133,7 @@ class UserService(BaseService):
             raise BadRequest("Passwords do not match")
         token_data = self.validate_password_reset_token(token)
         user = await self._get(UUID(token_data["id"]))
+        if user is None:
+            raise InvalidToken("Reset link is invalid or has expired")
         user.password_hash = hash_password(new_password)
         await self._update(user)

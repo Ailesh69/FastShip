@@ -20,6 +20,8 @@ class DeliveryPartner(User, table=True):
             postgresql.UUID(as_uuid=True), primary_key=True, default=uuid4
         ),
     )
+    # See the note on Seller.email — same missing constraint, same consequence.
+    email: EmailStr = Field(unique=True, index=True)
     serviceable_zip_codes: list[int] = Field(sa_column=Column(ARRAY(Integer)))
     zipcode: int | None = Field(default=None)
     max_handling_capacity: int

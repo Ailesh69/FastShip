@@ -20,6 +20,13 @@ class Seller(User, table=True):
             postgresql.UUID(as_uuid=True), primary_key=True, default=uuid4
         ),
     )
+    # Unique, like Client.email. Without it SellerService.add()'s
+    # `except IntegrityError -> Conflict` could never fire: registering the same
+    # address twice quietly created a second account, and login() picks a row
+    # with a plain SELECT, so which of the two you authenticated against — and
+    # whose shipments you then saw — was down to whatever Postgres returned
+    # first.
+    email: EmailStr = Field(unique=True, index=True)
     created_at: datetime = Field(
         sa_column=Column(
             TIMESTAMP(timezone=True), default=lambda: datetime.now(tz=timezone.utc)

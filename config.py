@@ -1,4 +1,16 @@
+from urllib.parse import urlparse
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from core.request_context import get_request_base_url
+
+# Addresses that only ever resolve on the machine running this process. A link
+# built from one of these is undeliverable to anyone else, on any network.
+LOOPBACK_HOSTS = {"localhost", "127.0.0.1", "0.0.0.0", "::1", ""}
+
+
+def is_loopback(url: str) -> bool:
+    return (urlparse(url).hostname or "") in LOOPBACK_HOSTS
 
 _base_config = SettingsConfigDict(
     env_file=".env", env_ignore_empty=True, extra="ignore"
@@ -80,6 +92,22 @@ class AppSettings(BaseSettings):
     def base_url(self) -> str:
         """APP_BASE_URL without a trailing slash, safe to concatenate."""
         return self.APP_BASE_URL.rstrip("/")
+
+    def link_base(self) -> str:
+        """The address to build outgoing links from, for THIS request.
+
+        A configured APP_BASE_URL that names a real host always wins — that is
+        someone deliberately pinning the public address, and it must not be
+        second-guessed. Only when it points at loopback (the default, and what
+        it is during local development) does the request's own Host take over,
+        so a link mailed to a phone that reached this server over the LAN comes
+        back addressed to the LAN, not to the phone's own localhost.
+        """
+        configured = self.base_url
+        if not is_loopback(configured):
+            return configured
+        derived = get_request_base_url()
+        return derived.rstrip("/") if derived else configured
 
     @property
     def cors_origins(self) -> list[str]:

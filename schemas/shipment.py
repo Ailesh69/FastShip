@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 from pydantic import BaseModel, EmailStr, model_validator
 import sqlalchemy as sa
+from sqlalchemy import TIMESTAMP
 from sqlmodel import SQLModel, Field, Relationship, Column
 from Database.models import ShipmentStatus
 from uuid import uuid4, UUID
@@ -33,7 +34,15 @@ class Shipment(BaseShipment, table=True):
         ),
     )
     status: ShipmentStatus
-    estimated_delivery: datetime
+    # TIMESTAMP WITH TIME ZONE, matching created_at on every other table. It was
+    # the one bare `datetime` in the schema, so Postgres stored it naive: the
+    # offset was dropped on the way in, and the JSON that came back out had no
+    # offset either — which `new Date()` in the browser reads as LOCAL time
+    # while it reads timeline timestamps as UTC. Delivery estimates and the
+    # events they sit beside were being rendered on two different clocks.
+    estimated_delivery: datetime = Field(
+        sa_column=Column(TIMESTAMP(timezone=True), nullable=False)
+    )
     timeline: list["ShipmentEvent"] = Relationship(
         back_populates="shipment", sa_relationship_kwargs={"lazy": "selectin"}
     )
@@ -59,9 +68,16 @@ class Shipment(BaseShipment, table=True):
         back_populates="shipments", sa_relationship_kwargs={"lazy": "selectin"}
     )
 
-    @property
-    def status(self):
-        return self.timeline[-1].status if len(self.timeline) > 0 else None
+    # `status` is the mapped column declared above, kept equal to the newest
+    # timeline event by ShipmentEventService.add().
+    #
+    # There used to be a `status` @property here returning the last timeline
+    # entry. It never ran: SQLAlchemy instruments the mapped attribute onto the
+    # class after the body executes, so the property object was replaced by the
+    # column's InstrumentedAttribute and silently discarded. The column was only
+    # ever written once, at creation, so every shipment reported "placed"
+    # forever — and DeliveryPartner.active_shipments, which filters on it, never
+    # shrank, permanently exhausting each partner's handling capacity.
 
     review: "Review" = Relationship(
         back_populates="shipment", sa_relationship_kwargs={"lazy": "selectin"}

@@ -1,144 +1,121 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Submit Review – FastShip</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: #f4f6f9;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-        }
-        .card {
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.10);
-            padding: 40px 36px;
-            max-width: 460px;
-            width: 100%;
-        }
-        .logo {
-            font-size: 22px;
-            font-weight: 800;
-            color: #1a73e8;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-        }
-        h2 {
-            font-size: 20px;
-            color: #222;
-            margin-bottom: 6px;
-        }
-        p.subtitle {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 28px;
-        }
-        label.section-label {
-            display: block;
-            font-size: 14px;
-            font-weight: 600;
-            color: #444;
-            margin-bottom: 10px;
-        }
-        .rating-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 24px;
-        }
-        .rating-group input[type="radio"] { display: none; }
-        .rating-group label {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            border: 2px solid #d0d5dd;
-            font-size: 16px;
-            font-weight: 700;
-            color: #555;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .rating-group input[type="radio"]:checked + label {
-            background: #1a73e8;
-            border-color: #1a73e8;
-            color: #fff;
-        }
-        .rating-group label:hover {
-            border-color: #1a73e8;
-            color: #1a73e8;
-        }
-        textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #d0d5dd;
-            border-radius: 6px;
-            font-size: 14px;
-            color: #333;
-            resize: vertical;
-            margin-bottom: 24px;
-            font-family: inherit;
-        }
-        textarea:focus {
-            outline: none;
-            border-color: #1a73e8;
-        }
-        button {
-            width: 100%;
-            padding: 13px;
-            background: #1a73e8;
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        button:hover { background: #1558b0; }
-        .error { color: #d93025; font-size: 13px; margin-top: -18px; margin-bottom: 16px; display: none; }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <div class="logo">FASTSHIP</div>
-        <h2>Rate Your Delivery</h2>
-        <p class="subtitle">How was your experience? Your feedback helps us improve.</p>
+{% extends "_page_base.html" %}
 
-        <form method="POST" action="{{ review_url }}" onsubmit="return validate()">
-            <label class="section-label">Your Rating <span style="color:#d93025">*</span></label>
-            <div class="rating-group">
-                {% for i in range(1, 6) %}
-                <input type="radio" name="rating" id="r{{ i }}" value="{{ i }}" {% if i == 5 %}{% endif %} required />
-                <label for="r{{ i }}">{{ i }}</label>
-                {% endfor %}
-            </div>
-            <p class="error" id="rating-error">Please select a rating before submitting.</p>
+{% block title %}Submit Review — FastShip{% endblock %}
+{% block brand_sub %}RATE YOUR DELIVERY{% endblock %}
+{% block heading %}HOW DID WE DO?{% endblock %}
+{% block shell_width %}520px{% endblock %}
+{% block foot_width %}520px{% endblock %}
 
-            <label class="section-label" for="comment">Feedback <span style="color:#aaa; font-weight:400">(optional)</span></label>
-            <textarea name="comment" id="comment" rows="3" placeholder="Tell us about your experience..."></textarea>
+{% block subheading %}
+<p class="page-sub">YOUR FEEDBACK HELPS US IMPROVE</p>
+{% endblock %}
 
-            <button type="submit">Submit Review</button>
-        </form>
+{% block extra_css %}
+/* --- rating selector -------------------------------------------------
+   Five square keys, like a row of arcade buttons. The radios themselves
+   are visually hidden rather than display:none so they stay reachable by
+   keyboard and screen readers; the label is the visible control. */
+.rate { display: flex; gap: 10px; }
+.rate input {
+  position: absolute;
+  opacity: 0;
+  width: 1px; height: 1px;
+  pointer-events: none;
+}
+.rate label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 54px;
+  cursor: pointer;
+  border: 2px solid rgba(34, 211, 238, 0.45);
+  background: rgba(4, 12, 28, 0.9);
+  color: #7f93ad;
+  font-family: var(--font-pixel);
+  font-size: 15px;
+  transition: color .15s ease, border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.rate label:hover {
+  border-color: var(--fs-teal);
+  color: var(--fs-teal);
+}
+/* Checked wins over hover, so the selection never looks lost while the
+   pointer is elsewhere on the row. */
+.rate input:checked + label {
+  border-color: var(--fs-gold);
+  background: rgba(251, 191, 36, 0.16);
+  color: var(--fs-gold);
+  text-shadow: 0 0 8px rgba(251, 191, 36, 0.85);
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.55), inset 0 0 14px rgba(251, 191, 36, 0.15);
+}
+/* Keyboard focus has to be visible — the input is hidden, so the ring is
+   drawn on its label instead. */
+.rate input:focus-visible + label {
+  border-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.35);
+}
+.rate-scale {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-term);
+  font-size: 17px;
+  letter-spacing: 1px;
+  color: #64809c;
+  margin-top: 10px;
+}
+.req { color: #ff6b4a; }
+.optional { color: #64809c; }
+{% endblock %}
+
+{% block content %}
+<form method="POST" action="{{ review_url }}" id="reviewForm" novalidate>
+  <div class="panel cut">
+    <div class="section-head">[ YOUR RATING <span class="req">*</span> ]</div>
+
+    <div class="rate">
+      {% for i in range(1, 6) %}
+      <input type="radio" name="rating" id="r{{ i }}" value="{{ i }}" />
+      <label for="r{{ i }}">{{ i }}</label>
+      {% endfor %}
     </div>
-    <script>
-        function validate() {
-            const selected = document.querySelector('input[name="rating"]:checked');
-            const err = document.getElementById('rating-error');
-            if (!selected) {
-                err.style.display = 'block';
-                return false;
-            }
-            err.style.display = 'none';
-            return true;
-        }
-    </script>
-</body>
-</html>
+    <div class="rate-scale">
+      <span>1 · POOR</span>
+      <span>GREAT · 5</span>
+    </div>
+    <p class="err" id="rating-error">SELECT A RATING BEFORE SUBMITTING.</p>
+
+    <div class="field" style="margin-top: 26px; margin-bottom: 0;">
+      <label class="field-label" for="comment">
+        FEEDBACK <span class="optional">(OPTIONAL)</span>
+      </label>
+      <div class="well">
+        <textarea name="comment" id="comment" rows="4"
+                  placeholder="Tell us about your experience..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <button type="submit" class="btn cut"><span>[ SUBMIT REVIEW ]</span></button>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // The radios carry no `required` attribute: with five of them, native
+  // validation points at the first input, which is visually hidden — so the
+  // browser reports an error on an element the user cannot see and, in some
+  // browsers, refuses to show the bubble at all. This message is attached to
+  // the group instead.
+  document.getElementById('reviewForm').addEventListener('submit', function (e) {
+    var picked = document.querySelector('input[name="rating"]:checked');
+    var err = document.getElementById('rating-error');
+    if (!picked) {
+      e.preventDefault();
+      err.style.display = 'block';
+      return;
+    }
+    err.style.display = 'none';
+  });
+</script>
+{% endblock %}

@@ -6,7 +6,8 @@ from schemas.ShipmentEvent import ShipmentEvent
 from schemas.shipment import Shipment
 from Database.models import ShipmentStatus
 from services.Base import BaseService
-from worker.tasks import send_sms, send_email_with_template
+from worker.tasks import send_sms
+from services.mailer import send_templated_email
 from schemas.DeliveryPartner import DeliveryPartner
 from utils import generate_url_safe_token
 
@@ -57,6 +58,12 @@ class ShipmentEventService(BaseService):
             Description=description,
             shipment_id=shipment.id,
         )
+        # Keep the denormalised column on the shipment row in step with the
+        # newest event. Everything that asks a shipment for its status reads
+        # that column — the API response, and DeliveryPartner.active_shipments,
+        # which decides whether a partner has capacity left for another job.
+        shipment.status = status
+        self.session.add(shipment)
         await self._notify(shipment, status, location)
         return await self._add(event)
 
@@ -85,7 +92,7 @@ class ShipmentEventService(BaseService):
                         "%d %B %Y"
                     ),
                     # The route is /shipment/track, not /shipment/tracking.
-                    "tracking_url": f"{app_settings.base_url}/shipment/track?id={shipment.id}",
+                    "tracking_url": f"{app_settings.link_base()}/shipment/track?id={shipment.id}",
                 }
             case ShipmentStatus.in_transit:
                 template = "mail_in_transit.html"
@@ -107,13 +114,25 @@ class ShipmentEventService(BaseService):
                 }
                 code = randint(100_000, 999_999)
                 await add_otp(shipment.id, code)
+                # The code goes out on EVERY channel we have for this customer,
+                # not just the "best" one.
+                #
+                # It used to be SMS-or-email: given a phone number, the code was
+                # texted and deliberately withheld from the email. That made a
+                # single Twilio failure unrecoverable — the code was generated
+                # and stored, the SMS died in the worker with the web request
+                # already answered 200, and nobody could learn the number. The
+                # shipment could then never be marked delivered, because the
+                # handover check has no other way to pass.
+                #
+                # Both channels belong to the same customer, so sending to both
+                # costs nothing in confidentiality and removes that dead end.
+                context["otp"] = code
                 if shipment.client_contact_phone:
                     send_sms.delay(
                         to=shipment.client_contact_phone,
                         body=f"Your order is arriving soon! Share OTP {code} with the delivery agent when you receive your order.",
                     )
-                else:
-                    context["otp"] = code
             case ShipmentStatus.delivered:
                 template = "mail_delivered.html"
                 subject = "Your order has been delivered!"
@@ -122,7 +141,7 @@ class ShipmentEventService(BaseService):
                     "shipment_id": str(shipment.id),
                     "content": shipment.content,
                     "delivered_on": now,
-                    "review_url": f"{app_settings.base_url}/shipment/review?token={token}",
+                    "review_url": f"{app_settings.link_base()}/shipment/review?token={token}",
                 }
             case ShipmentStatus.cancelled:
                 template = "mail_cancelled.html"
@@ -136,7 +155,7 @@ class ShipmentEventService(BaseService):
                 return
 
         if shipment.client_contact_email:
-            send_email_with_template.delay(
+            send_templated_email(
                 recipients=[shipment.client_contact_email],
                 subject=subject,
                 context=context,

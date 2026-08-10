@@ -1,0 +1,66 @@
+{#
+  Reusable email fragments. Macros rather than includes so each one takes
+  arguments and there is exactly one definition of a detail row, a status chip
+  and a call-to-action button across all seven emails.
+
+  Everything is inlined and table-based for the reasons documented at the top of
+  _mail_base.html.
+#}
+
+{#
+  The site's two typefaces, defined HERE rather than in _mail_base.html because
+  an {% import %}ed template does not inherit the importer's variables — a macro
+  referencing a name set in the base would render an empty font-family and
+  silently drop back to the client default. _mail_base.html imports these back
+  out as parts.F_PIXEL / parts.F_TERM, so there is still one definition.
+
+  'Press Start 2P' for headings, labels, chips and buttons; 'VT323' for body
+  copy and data values — the same split the frontend uses (--font-pixel /
+  --font-term in src/index.css). Courier is the fallback for clients that strip
+  @font-face.
+#}
+{% set F_PIXEL = "'Press Start 2P','Courier New',Courier,monospace" %}
+{% set F_TERM = "'VT323','Courier New',Courier,monospace" %}
+
+{# One label/value line inside the detail panel. `last` drops the divider on the
+   final row so the panel doesn't end on a rule. #}
+{% macro row(label, value, last=false) %}
+<tr>
+  <td class="fs-kv-label" width="42%" valign="top" style="padding:9px 10px 9px 0; font-family:{{ F_PIXEL }}; font-size:9px; letter-spacing:1px; color:#7f93ad; {% if not last %}border-bottom:1px solid #16324a;{% endif %}">{{ label }}</td>
+  <td class="fs-kv-value" width="58%" valign="top" align="right" style="padding:9px 0; font-family:{{ F_TERM }}; font-size:20px; color:#ffffff; word-break:break-word; {% if not last %}border-bottom:1px solid #16324a;{% endif %}">{{ value }}</td>
+</tr>
+{% endmacro %}
+
+{# A row whose value is a status chip. Kept separate from row() so the chip
+   markup lives in one place. #}
+{% macro row_status(label, tone, text, last=false) %}
+<tr>
+  <td class="fs-kv-label" width="42%" valign="middle" style="padding:9px 10px 9px 0; font-family:{{ F_PIXEL }}; font-size:9px; letter-spacing:1px; color:#7f93ad; {% if not last %}border-bottom:1px solid #16324a;{% endif %}">{{ label }}</td>
+  <td class="fs-kv-value" width="58%" valign="middle" align="right" style="padding:9px 0; {% if not last %}border-bottom:1px solid #16324a;{% endif %}">
+    <span style="display:inline-block; font-family:{{ F_PIXEL }}; font-size:9px; letter-spacing:1px; color:{{ tone }}; border:2px solid {{ tone }}; padding:7px 10px;">{{ text }}</span>
+  </td>
+</tr>
+{% endmacro %}
+
+{# Call to action. A bordered table cell wrapping a block-level <a>: the cell
+   paints the fill for clients that ignore link backgrounds, and the anchor
+   fills the cell so the whole box is clickable. #}
+{% macro button(href, label, fill='#7de87e') %}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;">
+  <tr>
+    <td bgcolor="{{ fill }}" align="center" style="background-color:{{ fill }}; border:2px solid #f2fff8;">
+      <a href="{{ href }}" target="_blank" style="display:block; padding:16px 30px; font-family:{{ F_PIXEL }}; font-size:11px; letter-spacing:1px; color:#05121f; text-decoration:none;">[ {{ label }} ]</a>
+    </td>
+  </tr>
+</table>
+{% endmacro %}
+
+{# Highlight panel — the OTP box and the "link not working" fallback both use
+   it. `tone` sets the border and label colour. #}
+{% macro notice(tone) %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#060f26" style="background-color:#060f26; border:2px solid {{ tone }};">
+  <tr><td style="padding:18px 20px; font-family:{{ F_TERM }}; font-size:19px; line-height:1.45; color:#c3d3e6;">
+    {{ caller() }}
+  </td></tr>
+</table>
+{% endmacro %}
