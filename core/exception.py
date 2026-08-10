@@ -1,3 +1,5 @@
+import traceback
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from starlette.status import (
@@ -63,11 +65,17 @@ def _get_handler(status_code: int, detail: str):
 
 
 async def _internal_server_error_handler(_request: Request, exc: Exception) -> JSONResponse:
+    # The traceback goes to the server log, never to the client. It used to be
+    # returned in an "x-error" header, which broke twice over: exception text
+    # routinely contains newlines and non-latin-1 characters, and a header value
+    # holding either makes the ASGI server raise "Invalid HTTP header value" and
+    # drop the connection — so the caller got no response at all instead of a
+    # 500. It also handed internal details (SQL, file paths) to the browser.
     print(Panel(f"Handled exception: {type(exc).__name__}"))
+    traceback.print_exception(type(exc), exc, exc.__traceback__)
     return JSONResponse(
         status_code=HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": "Something went wrong"},
-        headers={"x-error": str(exc)},
     )
 
 

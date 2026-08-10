@@ -1,0 +1,190 @@
+{#
+  Shared shell for every transactional email.
+
+  WHY THIS LOOKS DIFFERENT FROM _page_base.html
+  ---------------------------------------------
+  The browser pages and these emails share one palette and one visual language
+  (dark navy field, hard square edges, bracketed section labels, uppercase
+  letter-spaced type). They cannot share an implementation, because a mail
+  client is not a browser:
+
+    * The site's two typefaces are declared below and loaded over absolute URLs
+      from this server, so clients that honour @font-face (Apple Mail, iOS Mail,
+      Outlook for Mac, Thunderbird, Yahoo) render the real thing. Gmail and
+      Outlook for Windows strip @font-face and fall back to Courier, which is
+      why every size is chosen to stay readable in BOTH — see the note on
+      --fs-* usage below. The pixel feel survives the fallback through
+      uppercase, letter-spacing and square borders.
+    * clip-path is unsupported, so corners are square rather than diagonally
+      cut.
+    * flexbox and grid are unreliable (Outlook renders through Word), so the
+      layout is nested tables with explicit widths.
+    * <style> blocks are dropped by Gmail's mobile app on non-Gmail accounts,
+      so every style that matters is inlined on the element. The <style> block
+      below carries only the mobile media query, which is a progressive
+      enhancement — the email is already readable without it.
+    * text-shadow / box-shadow glows are ignored by Outlook, so they are never
+      load-bearing; colour and border do the work.
+
+  Children set {% block accent %} to the status colour and fill in the content
+  blocks. Tones match frontend/src/components/shipmentStatus.js.
+#}
+{% set accent = self.accent() | trim %}
+{# Font stacks come from _mail_parts.html — see the note there for why they are
+   defined in the imported module rather than here.
+
+   asset_base is injected by services/mailer.py and is the address this server is
+   reachable at from the RECIPIENT's device: an email has no page to resolve a
+   relative path against, so the @font-face URLs below must be absolute. #}
+{% import "_mail_parts.html" as _t %}
+{% set F_PIXEL = _t.F_PIXEL %}
+{% set F_TERM = _t.F_TERM %}
+{% set base = asset_base | default('', true) %}
+<!DOCTYPE html>
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+{# Tells clients the design is already dark, so they don't run their own
+   dark-mode inversion over it and wreck the contrast. #}
+<meta name="color-scheme" content="dark" />
+<meta name="supported-color-schemes" content="dark" />
+<title>{% block title %}FastShip{% endblock %}</title>
+<!--[if mso]>
+<noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+<![endif]-->
+<style>
+  /* The site's typefaces, same two woff2 files the frontend ships, served by
+     this API from /static/fonts. Clients that drop <style> simply fall back to
+     Courier — nothing here is load-bearing.
+     font-display:swap, not block: in a mail client an invisible-text pause is
+     worse than a moment of Courier, because there is no loading state to hide
+     behind and the message may be read offline. */
+  @font-face {
+    font-family: 'Press Start 2P';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('{{ base }}/static/fonts/press-start-2p-latin.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'VT323';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('{{ base }}/static/fonts/vt323-latin.woff2') format('woff2');
+  }
+
+  /* Progressive enhancement only — see the note above. */
+  @media only screen and (max-width: 620px) {
+    .fs-card { width: 100% !important; }
+    .fs-pad { padding-left: 20px !important; padding-right: 20px !important; }
+    .fs-kv-label, .fs-kv-value { display: block !important; width: 100% !important; text-align: left !important; }
+    .fs-kv-value { padding-top: 2px !important; padding-bottom: 10px !important; }
+    .fs-h1 { font-size: 17px !important; }
+  }
+  a { color: {{ accent }}; }
+</style>
+</head>
+<body style="margin:0; padding:0; background-color:#0a1128; color:#e2e8f0;">
+
+{# Preview text: the line most clients show next to the subject in the inbox
+   list. Hidden in the body itself, then padded so the client doesn't pull the
+   following visible copy in after it. #}
+<div style="display:none; max-height:0; overflow:hidden; mso-hide:all; font-size:1px; line-height:1px; color:#0a1128; opacity:0;">
+  {% block preview %}FastShip Deliveries{% endblock %}
+  &#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;
+</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0a1128" style="background-color:#0a1128; margin:0; padding:0;">
+<tr>
+<td align="center" style="padding:32px 12px 44px;">
+
+  <table role="presentation" class="fs-card" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px;">
+
+    {# ---- wordmark ---- #}
+    <tr>
+      <td align="center" style="padding:0 0 22px;">
+        <div style="font-family:{{ F_PIXEL }}; font-size:19px; letter-spacing:3px; color:#2dd4bf;">FASTSHIP</div>
+        <div style="font-family:{{ F_TERM }}; font-size:18px; letter-spacing:3px; color:#fbbf24; padding-top:9px;">{% block brand_sub %}DELIVERIES{% endblock %}</div>
+      </td>
+    </tr>
+
+    {# ---- card ---- #}
+    <tr>
+    <td bgcolor="#0d1938" style="background-color:#0d1938; border:2px solid {{ accent }};">
+
+      {# accent bar across the top, the one strong colour cue for the status #}
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td bgcolor="{{ accent }}" style="background-color:{{ accent }}; height:6px; line-height:6px; font-size:6px;">&nbsp;</td></tr>
+      </table>
+
+      {# ---- heading ---- #}
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td class="fs-pad" style="padding:30px 34px 0;">
+            <div style="font-family:{{ F_PIXEL }}; font-size:10px; letter-spacing:1px; color:{{ accent }}; padding-bottom:14px;">[ {% block eyebrow %}FASTSHIP{% endblock %} ]</div>
+            <h1 class="fs-h1" style="margin:0; font-family:{{ F_PIXEL }}; font-size:15px; letter-spacing:1px; color:#ffffff; line-height:1.6;">{% block heading %}{% endblock %}</h1>
+          </td>
+        </tr>
+        <tr>
+          <td class="fs-pad" style="padding:18px 34px 0; font-family:{{ F_TERM }}; font-size:20px; line-height:1.45; color:#c3d3e6;">
+            {% block lede %}{% endblock %}
+          </td>
+        </tr>
+      </table>
+
+      {# ---- detail rows ---- #}
+      {% block details %}
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td class="fs-pad" style="padding:24px 34px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#060f26" style="background-color:#060f26; border:2px solid #1e6f7a;">
+              <tr><td style="padding:16px 18px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  {% block rows %}{% endblock %}
+                </table>
+              </td></tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+      {% endblock %}
+
+      {# ---- anything status-specific: buttons, OTP panels, notices ---- #}
+      {% block after_details %}{% endblock %}
+
+      {# ---- closing line ---- #}
+      {% block outro_wrap %}
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td class="fs-pad" style="padding:24px 34px 30px; font-family:{{ F_TERM }}; font-size:19px; line-height:1.45; color:#8fa6bf;">
+            {% block outro %}{% endblock %}
+          </td>
+        </tr>
+      </table>
+      {% endblock %}
+
+    </td>
+    </tr>
+
+    {# ---- footer ---- #}
+    <tr>
+      <td align="center" style="padding:20px 16px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr><td style="border-top:2px solid #24407a; height:1px; line-height:1px; font-size:1px;">&nbsp;</td></tr>
+        </table>
+        <div style="font-family:{{ F_TERM }}; font-size:17px; letter-spacing:1px; line-height:1.5; color:#64809c; padding-top:16px;">
+          {% block footer %}&copy; 2026 FASTSHIP DELIVERIES<br />THIS IS AN AUTOMATED EMAIL — PLEASE DO NOT REPLY.{% endblock %}
+        </div>
+      </td>
+    </tr>
+
+  </table>
+
+</td>
+</tr>
+</table>
+</body>
+</html>

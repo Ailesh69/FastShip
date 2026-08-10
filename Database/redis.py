@@ -26,8 +26,26 @@ async def add_jti_to_blacklist(jti: str):
 async def is_jti_blacklisted(jti: str) -> bool:
     return await _token_blacklist.exists(jti)
 
-async def add_otp(id : UUID , code : int ):
-    await _otp.set(str(id),code)
-    
-async def verify_otp(id : UUID)-> str:
-    return str(await _otp.get(str(id)))
+# A delivery code is only useful between "out for delivery" and the handover.
+# Without a TTL the codes sat in Redis forever, so one texted weeks ago still
+# opened the shipment it belonged to.
+OTP_TTL_SECONDS = 24 * 60 * 60
+
+
+async def add_otp(id: UUID, code: int):
+    await _otp.set(str(id), code, ex=OTP_TTL_SECONDS)
+
+
+async def verify_otp(id: UUID) -> str | None:
+    """The stored code, or None when none was issued (or it has expired).
+
+    This used to be `str(await _otp.get(...))`, which turned a missing code into
+    the literal string "None" — a value a caller could simply send back to pass
+    the check on a shipment that never had a code issued at all.
+    """
+    return await _otp.get(str(id))
+
+
+async def clear_otp(id: UUID):
+    """Burn the code once it has been accepted, so it cannot be replayed."""
+    await _otp.delete(str(id))

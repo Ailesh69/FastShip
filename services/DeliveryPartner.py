@@ -1,7 +1,8 @@
 from typing import Sequence
 
-from core.exception import DeliveryPartnerNotAvailable
+from core.exception import Conflict, DeliveryPartnerNotAvailable
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy import any_
 from sqlmodel import select
 from services.User import UserService
@@ -14,7 +15,13 @@ class DeliveryPartnerService(UserService):
         super().__init__(model, session)
 
     async def add(self, dp: DPCreate) -> DeliveryPartner:
-        return await self._add_user(dp.model_dump(),"partner")
+        # Seller and client registration both translate a duplicate email into a
+        # 409; this one didn't, so the same collision surfaced as a 500.
+        try:
+            return await self._add_user(dp.model_dump(), "partner")
+        except IntegrityError:
+            await self.session.rollback()
+            raise Conflict("Email is already registered")
 
     async def login(self, email: str, password: str) -> str:
         return await self._generate_token(email, password)

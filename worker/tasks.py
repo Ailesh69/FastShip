@@ -5,6 +5,7 @@ from fastapi_mail import FastMail, ConnectionConfig, MessageSchema, MessageType
 from utils import TEMPLATE_DIR
 from pydantic import EmailStr
 from twilio.rest import Client
+from twilio.base.exceptions import TwilioRestException
 
 fast_mail = FastMail(
     ConnectionConfig(
@@ -55,11 +56,43 @@ twilio = Client(
             notification_settings.TWILIO_SID, notification_settings.TWILIO_AUTH_TOKEN
 )
 
-@app.task
-def send_sms(to: str, body: str):
-    twilio.messages.create(
-        from_=notification_settings.TWILIO_PHONE_NUMBER, to=to, body=body
-    )
+# Statuses where trying the same request again can plausibly succeed: Twilio
+# rate-limiting us, or Twilio itself being unhealthy.
+#
+# Everything else is permanent for this message — 401/403 means the credentials
+# are wrong (error 20003), 400 means the request is malformed, 21211 an invalid
+# recipient, 21608 an unverified number on a trial account. None of those change
+# on the tenth attempt, so retrying just buries the real cause under a pile of
+# identical failures and delays the log line that explains it.
+_RETRYABLE_STATUSES = {429, 500, 502, 503, 504}
+
+
+@app.task(
+    bind=True,
+    max_retries=5,
+    retry_backoff=5,        # 5s, 10s, 20s, 40s, 80s
+    retry_backoff_max=300,
+    retry_jitter=True,      # spread retries so a burst doesn't resynchronise
+)
+def send_sms(self, to: str, body: str):
+    try:
+        twilio.messages.create(
+            from_=notification_settings.TWILIO_PHONE_NUMBER, to=to, body=body
+        )
+    except TwilioRestException as exc:
+        if exc.status not in _RETRYABLE_STATUSES:
+            # Swallowed on purpose: re-raising would mark the task FAILED and
+            # retry it under Celery's default policy for no benefit. The
+            # delivery code still reaches the customer by email, which is why
+            # this is survivable at all — see ShipmentEventService._notify.
+            print(
+                f"[sms] permanent failure for {to}: "
+                f"HTTP {exc.status} twilio_code={exc.code} {exc.msg}"
+            )
+            return
+        raise self.retry(exc=exc)
+    except Exception as exc:  # noqa: BLE001 - DNS, TLS, timeouts: all transient
+        raise self.retry(exc=exc)
 
 
 @app.task

@@ -32,7 +32,10 @@ async def create_test_data(session: AsyncSession):
         Seller(
             name=SELLER["name"],
             email=SELLER["email"],
-            zip_code=SELLER["zip_code"],
+            # The column is `zipcode`. `zip_code=` set a stray attribute that
+            # was never persisted, so the seeded seller had no zip code and
+            # shipment creation fell back to the destination for its origin.
+            zipcode=SELLER["zip_code"],
             email_verified=True,
             # hash_password truncates to 72 bytes itself.
             password_hash=hash_password(SELLER["password"]),

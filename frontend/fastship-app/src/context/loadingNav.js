@@ -16,16 +16,16 @@ export const MIN_MS = 2000
 export const MAX_MS = 3000
 export const FADE_MS = 260
 
-// Warp transition (the fast alternate to the turret loader): grid dive, then
-// flash + particle burst, then resolve into the destination. Fixed total —
-// unlike the turret's randomised 2-3s, this one is deliberately short and
-// constant every time. The route swap happens at the flash's peak brightness
-// (WARP_SWAP_MS), where full-white coverage hides the underlying DOM change.
-export const WARP_PHASE1_MS = 180
-export const WARP_PHASE2_MS = 150
-export const WARP_PHASE3_MS = 220
-export const WARP_MS = WARP_PHASE1_MS + WARP_PHASE2_MS + WARP_PHASE3_MS
-export const WARP_SWAP_MS = WARP_PHASE1_MS + WARP_PHASE2_MS / 2
+// Warp transition (the fast alternate to the turret loader): a diagonal
+// pixel-tile wave wipes in to cover the screen, then wipes back out to
+// reveal the destination. Two phases, cover then reveal — fixed total,
+// unlike the turret's randomised 2-3s. The route swap happens once the wave
+// has fully covered the screen (WARP_SWAP_MS), same moment WarpOverlay's own
+// canvas animation flips from covering to revealing.
+export const WARP_COVER_MS = 667
+export const WARP_REVEAL_MS = 667
+export const WARP_MS = WARP_COVER_MS + WARP_REVEAL_MS
+export const WARP_SWAP_MS = WARP_COVER_MS
 
 // Subtitle is chosen from where the user is heading TO.
 const DATA_LINKS = {

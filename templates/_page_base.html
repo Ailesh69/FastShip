@@ -1,0 +1,372 @@
+{#
+  Shared shell for the three pages this API renders in a real browser:
+  tracking.html, review.html and reset_password.html.
+
+  These are NOT emails — they are opened in a full browser, so they can carry
+  the frontend's actual design: self-hosted pixel fonts, the navy field with its
+  perspective floor grid, diagonal-cut corners and neon glows. Everything here
+  mirrors frontend/fastship-app/src/index.css so the two never drift; the token
+  names and values are copied from its @theme block.
+
+  Child templates override {% block title %}, {% block heading %},
+  {% block subheading %} and {% block content %}.
+#}<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>{% block title %}FastShip{% endblock %}</title>
+<style>
+/* ---------------------------------------------------------------
+   PIXEL FONTS — self-hosted, served by this API from /static/fonts.
+   Not fonts.googleapis.com: these pages are opened from an emailed
+   link, often on a phone, and a blocked CDN fetch would drop the
+   whole design back to plain monospace.
+   font-display: block — the typeface IS the design, so a brief
+   invisible-text pause beats a flash of the fallback.
+   --------------------------------------------------------------- */
+@font-face {
+  font-family: 'Press Start 2P';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('/static/fonts/press-start-2p-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'VT323';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('/static/fonts/vt323-latin.woff2') format('woff2');
+}
+
+/* --- design tokens, copied from the frontend's @theme --- */
+:root {
+  --fs-bg: #0a1128;
+  --fs-grid: #1e6f7a;
+  --fs-green: #7de87e;
+  --fs-green-hot: #39ff14;
+  --fs-teal: #22d3ee;
+  --fs-logo: #2dd4bf;
+  --fs-gold: #fbbf24;
+  --fs-orange: #f97316;
+  --fs-ink: #e2e8f0;
+  --fs-rule: #3b82f6;
+  --fs-panel: rgba(11, 14, 33, 0.72);
+
+  --font-pixel: 'Press Start 2P', ui-monospace, 'Courier New', monospace;
+  --font-term: 'VT323', 'Press Start 2P', ui-monospace, monospace;
+
+  --grid-cell: 40px;
+  --grid-line: rgba(30, 111, 122, 0.58);
+  --horizon: 46%;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { min-height: 100%; width: 100%; }
+
+body {
+  background: var(--fs-bg);
+  color: var(--fs-ink);
+  font-family: var(--font-pixel);
+  -webkit-font-smoothing: none;
+  overflow-x: hidden;
+  position: relative;
+  padding: 40px 16px 56px;
+  min-height: 100vh;
+}
+
+/* --- background: rectangular grid above the horizon, perspective floor
+       below it. Same two-system split the React GridBackground uses. --- */
+.bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.bg-bands {
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: var(--horizon);
+  background-image:
+    linear-gradient(to right, var(--grid-line) 0 2px, transparent 2px),
+    linear-gradient(to bottom, var(--grid-line) 0 2px, transparent 2px);
+  background-size: var(--grid-cell) var(--grid-cell);
+  -webkit-mask-image: linear-gradient(to right,
+    transparent 10%, #000 14%, #000 25%, transparent 30%,
+    transparent 70%, #000 75%, #000 86%, transparent 90%);
+  mask-image: linear-gradient(to right,
+    transparent 10%, #000 14%, #000 25%, transparent 30%,
+    transparent 70%, #000 75%, #000 86%, transparent 90%);
+  opacity: 0.55;
+}
+/* The floor: horizontal rules compress toward the horizon while the
+   verticals fan out, which is what reads as depth. Masked so it fades
+   before it reaches the content. */
+.bg-floor {
+  position: absolute;
+  left: -50%; right: -50%; bottom: 0;
+  height: calc(100% - var(--horizon));
+  background-image:
+    repeating-linear-gradient(to right,
+      var(--grid-line) 0 2px, transparent 2px 6.5%),
+    repeating-linear-gradient(to bottom,
+      var(--grid-line) 0 2px, transparent 2px 11%);
+  transform: perspective(340px) rotateX(64deg);
+  transform-origin: 50% 0;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 78%);
+  mask-image: linear-gradient(to bottom, #000 0%, transparent 78%);
+  opacity: 0.5;
+}
+
+/* --- the one corner-cut shape, matching .cut-corners in index.css.
+       Corners are cut on the diagonal, never rounded. --- */
+.cut {
+  clip-path: polygon(
+    8px 0, calc(100% - 8px) 0,
+    100% 8px, 100% calc(100% - 8px),
+    calc(100% - 8px) 100%, 8px 100%,
+    0 calc(100% - 8px), 0 8px
+  );
+}
+
+/* --- glows, matching index.css --- */
+.title-glow-clean {
+  color: #ffffff;
+  text-shadow:
+    0 0 8px rgba(255, 255, 255, 0.85),
+    0 0 20px rgba(125, 211, 252, 0.75),
+    0 0 40px rgba(56, 189, 248, 0.5);
+}
+.teal-glow {
+  color: var(--fs-teal);
+  text-shadow: 0 0 6px rgba(34, 211, 238, 0.85), 0 0 16px rgba(34, 211, 238, 0.5);
+}
+.gold-glow {
+  color: var(--fs-gold);
+  text-shadow: 0 0 6px rgba(251, 191, 36, 0.8), 0 0 16px rgba(251, 191, 36, 0.45);
+}
+.green-glow {
+  color: var(--fs-green);
+  text-shadow: 0 0 6px rgba(125, 232, 126, 0.8), 0 0 16px rgba(125, 232, 126, 0.45);
+}
+
+/* --- page furniture --- */
+.shell {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: {% block shell_width %}720px{% endblock %};
+  margin: 0 auto;
+}
+
+.brand {
+  text-align: center;
+  margin-bottom: 26px;
+}
+.brand-mark {
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  color: var(--fs-logo);
+  letter-spacing: 2px;
+  text-shadow: 0 0 8px rgba(45, 212, 191, 0.8), 0 0 22px rgba(45, 212, 191, 0.4);
+}
+.brand-sub {
+  font-family: var(--font-term);
+  font-size: 19px;
+  color: var(--fs-gold);
+  letter-spacing: 3px;
+  margin-top: 8px;
+}
+
+.page-title {
+  font-size: 17px;
+  line-height: 1.5;
+  text-align: center;
+  margin-bottom: 8px;
+}
+.page-sub {
+  font-family: var(--font-term);
+  font-size: 19px;
+  color: #9fb4cc;
+  text-align: center;
+  letter-spacing: 1px;
+  margin-bottom: 28px;
+  word-break: break-all;
+}
+
+/* The standard panel: 2px teal rule over a dark wash with an inner bloom —
+   the same treatment as .teal-outline-box / the dashboard cards. */
+.panel {
+  border: 2px solid var(--fs-teal);
+  background: rgba(10, 22, 48, 0.82);
+  box-shadow:
+    0 0 10px rgba(34, 211, 238, 0.35),
+    0 0 30px rgba(34, 211, 238, 0.14),
+    inset 0 0 22px rgba(34, 211, 238, 0.07);
+  padding: 24px 22px;
+  margin-bottom: 22px;
+}
+.panel-green {
+  border-color: var(--fs-green);
+  box-shadow:
+    0 0 10px rgba(125, 232, 126, 0.35),
+    0 0 30px rgba(125, 232, 126, 0.15),
+    inset 0 0 24px rgba(125, 232, 126, 0.06);
+}
+
+.section-head {
+  font-size: 11px;
+  color: var(--fs-teal);
+  letter-spacing: 1px;
+  margin-bottom: 18px;
+  text-shadow: 0 0 8px rgba(34, 211, 238, 0.6);
+}
+
+/* Label / value pairs. VT323 for values so long ids and dates fit. */
+.kv { display: flex; flex-wrap: wrap; gap: 16px; }
+.kv-cell { flex: 1 1 45%; min-width: 160px; }
+.kv-label {
+  font-size: 9px;
+  color: #7f93ad;
+  letter-spacing: 1px;
+  margin-bottom: 7px;
+}
+.kv-value {
+  font-family: var(--font-term);
+  font-size: 20px;
+  color: #ffffff;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+/* Status chip — square, bordered, tinted by status. Tones are the ones in
+   frontend src/components/shipmentStatus.js. */
+.chip {
+  display: inline-block;
+  font-size: 9px;
+  letter-spacing: 1px;
+  padding: 7px 11px;
+  border: 2px solid currentColor;
+  background: rgba(255, 255, 255, 0.06);
+}
+.chip-placed           { color: #cfe0ef; }
+.chip-in_transit       { color: #dfe7ef; }
+.chip-out_for_delivery { color: #4ec3d9; }
+.chip-delivered        { color: #7de87e; }
+.chip-cancelled        { color: #ff6b4a; }
+
+/* Solid green face with a light rim and a black label — .pixel-btn. */
+.btn {
+  display: block;
+  width: 100%;
+  border: 0;
+  padding: 2px;
+  cursor: pointer;
+  background: #f2fff8;
+  font-family: var(--font-pixel);
+  font-size: 12px;
+  color: #05121f;
+  text-decoration: none;
+  filter: drop-shadow(0 0 6px rgba(125, 232, 126, 0.75))
+          drop-shadow(0 0 16px rgba(57, 255, 20, 0.45));
+}
+.btn > span {
+  display: block;
+  background: var(--fs-green);
+  padding: 15px 18px;
+  text-align: center;
+}
+.btn:hover > span { background: #93f294; }
+
+.field { margin-bottom: 20px; }
+.field-label {
+  display: block;
+  font-size: 10px;
+  color: var(--fs-teal);
+  letter-spacing: 1px;
+  margin-bottom: 9px;
+}
+.well {
+  border: 2px solid rgba(34, 211, 238, 0.45);
+  background: rgba(4, 12, 28, 0.9);
+  padding: 2px;
+}
+.well:focus-within {
+  border-color: var(--fs-teal);
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.45);
+}
+.well input, .well textarea {
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #ffffff;
+  font-family: var(--font-term);
+  font-size: 21px;
+  padding: 11px 13px;
+  resize: vertical;
+}
+.well input::placeholder, .well textarea::placeholder {
+  color: #55708c;
+}
+
+.err {
+  display: none;
+  font-family: var(--font-term);
+  font-size: 18px;
+  color: #ff6b4a;
+  letter-spacing: 1px;
+  margin-top: 9px;
+}
+
+.foot {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  font-family: var(--font-term);
+  font-size: 17px;
+  color: #64809c;
+  letter-spacing: 1px;
+  margin-top: 30px;
+  padding-top: 18px;
+  border-top: 2px solid rgba(59, 130, 246, 0.35);
+  max-width: {% block foot_width %}720px{% endblock %};
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 520px) {
+  body { padding: 26px 12px 40px; }
+  .brand-mark { font-size: 15px; }
+  .page-title { font-size: 13px; }
+  .kv-cell { flex: 1 1 100%; }
+}
+
+{% block extra_css %}{% endblock %}
+</style>
+</head>
+<body>
+<div class="bg" aria-hidden="true">
+  <div class="bg-bands"></div>
+  <div class="bg-floor"></div>
+</div>
+
+<div class="shell">
+  <div class="brand">
+    <div class="brand-mark">FASTSHIP</div>
+    <div class="brand-sub">{% block brand_sub %}DELIVERIES{% endblock %}</div>
+  </div>
+
+  <h1 class="page-title title-glow-clean">{% block heading %}{% endblock %}</h1>
+  {% block subheading %}{% endblock %}
+
+  {% block content %}{% endblock %}
+</div>
+
+<div class="foot">{% block footer %}&copy; 2026 FASTSHIP DELIVERIES{% endblock %}</div>
+{% block scripts %}{% endblock %}
+</body>
+</html>

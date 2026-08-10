@@ -1,48 +1,26 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Order In Transit</title>
-    <style>
-        body { margin: 0; padding: 0; background-color: #f4f4f4; font-family: Arial, sans-serif; color: #333; }
-        .wrapper { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .header { background-color: #f57c00; padding: 32px 24px; text-align: center; }
-        .header h1 { margin: 0; color: #ffffff; font-size: 24px; letter-spacing: 1px; }
-        .header p { margin: 6px 0 0; color: #ffe0b2; font-size: 13px; }
-        .body { padding: 32px 24px; }
-        .body h2 { margin-top: 0; font-size: 20px; }
-        .body p { line-height: 1.6; font-size: 15px; color: #555; }
-        .info-box { background-color: #fff8f0; border-left: 4px solid #f57c00; border-radius: 4px; padding: 16px 20px; margin: 24px 0; }
-        .info-box table { width: 100%; border-collapse: collapse; }
-        .info-box td { padding: 6px 0; font-size: 14px; }
-        .info-box td:first-child { color: #888; width: 45%; }
-        .info-box td:last-child { font-weight: bold; color: #222; }
-        .status-badge { display: inline-block; background-color: #fff3e0; color: #e65100; border-radius: 12px; padding: 4px 14px; font-size: 13px; font-weight: bold; }
-        .footer { background-color: #f9f9f9; border-top: 1px solid #eee; text-align: center; padding: 20px 24px; font-size: 12px; color: #aaa; }
-    </style>
-</head>
-<body>
-    <div class="wrapper">
-        <div class="header">
-            <h1>FastShip Deliveries</h1>
-            <p>Your package is on the move!</p>
-        </div>
-        <div class="body">
-            <h2>Order In Transit</h2>
-            <p>Great news! Your shipment has been picked up and is currently on its way to you.</p>
-            <div class="info-box">
-                <table>
-                    <tr><td>Order ID</td><td>{{ shipment_id }}</td></tr>
-                    <tr><td>Contents</td><td>{{ content }}</td></tr>
-                    <tr><td>Current Location</td><td>Pincode {{ location }}</td></tr>
-                    <tr><td>Expected Delivery</td><td>{{ estimated_delivery }}</td></tr>
-                    <tr><td>Status</td><td><span class="status-badge">In Transit</span></td></tr>
-                </table>
-            </div>
-            <p>We will notify you when your order is out for delivery. Thank you for choosing FastShip!</p>
-        </div>
-        <div class="footer">&copy; 2026 FastShip Deliveries &nbsp;|&nbsp; This is an automated email, please do not reply.</div>
-    </div>
-</body>
-</html>
+{% extends "_mail_base.html" %}
+{% import "_mail_parts.html" as p %}
+
+{% block accent %}#22d3ee{% endblock %}
+{% block title %}Order In Transit{% endblock %}
+{% block brand_sub %}IN TRANSIT{% endblock %}
+{% block preview %}Your parcel is moving — last scanned at pincode {{ location }}.{% endblock %}
+{% block eyebrow %}IN TRANSIT{% endblock %}
+{% block heading %}YOUR PARCEL IS ON THE MOVE{% endblock %}
+
+{% block lede %}
+Your shipment has been picked up and is making its way to you. We will let you
+know as soon as it is out for delivery.
+{% endblock %}
+
+{% block rows %}
+  {{ p.row('ORDER ID', shipment_id) }}
+  {{ p.row('CONTENTS', content) }}
+  {{ p.row('LAST SCANNED', 'PINCODE ' ~ location) }}
+  {{ p.row('EXPECTED DELIVERY', estimated_delivery) }}
+  {{ p.row_status('STATUS', '#dfe7ef', 'IN TRANSIT', last=true) }}
+{% endblock %}
+
+{% block outro %}
+Thank you for choosing FastShip.
+{% endblock %}

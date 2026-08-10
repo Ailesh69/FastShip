@@ -1,50 +1,121 @@
-import GridBackground from './GridBackground'
-import PixelArt from './PixelArt'
-import { SPARKLE, SPARKLE_TEAL_PALETTE, STAR, STAR_PALETTE } from './pixelSpriteAssets'
-import { useLoadingNav } from '../context/loadingNav'
+import { useEffect, useRef } from 'react'
+import { useLoadingNav, WARP_COVER_MS, WARP_REVEAL_MS } from '../context/loadingNav'
 
-// Fast alternate to the turret loader: a ~550ms grid-dive / flash / resolve,
-// no percentage, no text. See the "WARP TRANSITION OVERLAY" section in
-// index.css for the shared 550ms timeline every layer here rides on.
+// Fast alternate to the turret loader: a diagonal pixel-tile wave wipes in to
+// cover the screen, then wipes back out to reveal the destination, with
+// floating cyan/orange particles drifting through the whole thing. Canvas +
+// requestAnimationFrame, ported from a standalone reference implementation.
+//
+// The reference drove its wave off a per-frame progress increment
+// (`progress += 0.035`), which drifts on anything other than ~60fps. Here
+// progress is derived from real elapsed time instead, and pinned to
+// WARP_COVER_MS / WARP_REVEAL_MS so the visual "fully covered" moment lines
+// up with LoadingNavProvider's own WARP_SWAP_MS route swap.
 //
 // Which of the two overlays shows is decided per-navigation in
 // LoadingNavProvider — this component only renders while that pick is
 // 'warp', and unmounts (via `active` going false) once the timeline ends.
 
-// Radial burst: each sprite flies outward from center at its own angle and
-// distance, same hand-tuned-array pattern as the turret's tracers/sparks.
-const BURST = [
-  { angle: -60, dist: 210, kind: 'sparkle', scale: 3 },
-  { angle: -20, dist: 250, kind: 'star', scale: 2.2 },
-  { angle: 15, dist: 190, kind: 'sparkle', scale: 2.6 },
-  { angle: 55, dist: 230, kind: 'star', scale: 2 },
-  { angle: 100, dist: 200, kind: 'sparkle', scale: 3.2 },
-  { angle: 140, dist: 220, kind: 'star', scale: 2.4 },
-  { angle: -110, dist: 195, kind: 'sparkle', scale: 2.2 },
-  { angle: -150, dist: 240, kind: 'star', scale: 2.8 },
-]
+const TILE = 32
+const PARTICLE_COUNT = 45
+// Progress value a phase counts as "done" at — headroom above 1 so the
+// diagonal stagger (delay up to 0.4) and the *2.2 tile ramp both fully
+// resolve before the phase flips, same as the reference.
+const PHASE_DONE = 1.4
 
-function BurstSprite({ angle, dist, kind, scale }) {
-  const rad = (angle * Math.PI) / 180
-  const bx = Math.cos(rad) * dist
-  const by = Math.sin(rad) * dist
-
-  return (
-    <div
-      className="anim-burst absolute left-1/2 top-1/2"
-      style={{ '--bx': `${bx}px`, '--by': `${by}px`, marginLeft: -8 * scale, marginTop: -8 * scale }}
-    >
-      {kind === 'star' ? (
-        <PixelArt rows={STAR} palette={STAR_PALETTE} scale={scale} outline="#7c4a03" />
-      ) : (
-        <PixelArt rows={SPARKLE} palette={SPARKLE_TEAL_PALETTE} scale={scale} />
-      )}
-    </div>
-  )
+function makeParticles(width, height) {
+  const particles = []
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    particles.push({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      size: Math.random() > 0.5 ? 6 : 10,
+      speedY: -(Math.random() * 2 + 1),
+      speedX: (Math.random() - 0.5) * 1.5,
+      color: Math.random() > 0.35 ? '#ff8c00' : '#00ffcc',
+    })
+  }
+  return particles
 }
 
 function WarpOverlay() {
   const { active, variant, destination } = useLoadingNav()
+  const canvasRef = useRef(null)
+
+  useEffect(() => {
+    if (!active || variant !== 'warp') return
+
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext('2d')
+
+    function resize() {
+      canvas.width = window.innerWidth
+      canvas.height = window.innerHeight
+    }
+    resize()
+    window.addEventListener('resize', resize)
+
+    const particles = makeParticles(canvas.width, canvas.height)
+    const startedAt = performance.now()
+    let mode = 'in' // 'in' = covering, 'out' = revealing
+    let rafId = 0
+
+    function draw(now) {
+      const width = canvas.width
+      const height = canvas.height
+      ctx.clearRect(0, 0, width, height)
+
+      const cols = Math.ceil(width / TILE)
+      const rows = Math.ceil(height / TILE)
+
+      const phaseMs = mode === 'in' ? WARP_COVER_MS : WARP_REVEAL_MS
+      const phaseStart = mode === 'in' ? startedAt : startedAt + WARP_COVER_MS
+      const progress = ((now - phaseStart) / phaseMs) * PHASE_DONE
+
+      // 1. diagonal pixel-tile wave
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const delay = (c / cols + r / rows) * 0.4
+          const pseudoRandom = Math.sin(c * 12.9898 + r * 78.233) * 0.08
+          const tileProgress = Math.max(0, Math.min(1, (progress - delay + pseudoRandom) * 2.2))
+          const alpha = mode === 'in' ? tileProgress : 1 - tileProgress
+
+          if (alpha > 0) {
+            ctx.fillStyle = (c + r) % 6 === 0 ? '#00ffcc' : '#07121d'
+            ctx.globalAlpha = alpha
+            ctx.fillRect(c * TILE, r * TILE, TILE, TILE)
+          }
+        }
+      }
+
+      // 2. floating pixel particles
+      ctx.globalAlpha = 1
+      particles.forEach((p) => {
+        p.y += p.speedY
+        p.x += p.speedX
+        if (p.y < 0) p.y = height
+        ctx.fillStyle = p.color
+        ctx.fillRect(p.x, p.y, p.size, p.size)
+      })
+
+      // 3. phase controller
+      if (progress >= PHASE_DONE && mode === 'in') {
+        mode = 'out'
+      } else if (progress >= PHASE_DONE && mode === 'out') {
+        ctx.clearRect(0, 0, width, height)
+        return
+      }
+
+      rafId = requestAnimationFrame(draw)
+    }
+
+    rafId = requestAnimationFrame(draw)
+
+    return () => {
+      cancelAnimationFrame(rafId)
+      window.removeEventListener('resize', resize)
+    }
+  }, [active, variant, destination])
 
   if (!active || variant !== 'warp') return null
 
@@ -53,36 +124,12 @@ function WarpOverlay() {
       role="status"
       aria-live="polite"
       aria-label="Loading"
-      className="fixed inset-0 z-[100] overflow-hidden"
-      // Remounts every navigation so the 550ms timeline always restarts
-      // clean instead of resuming mid-animation on a rapid re-trigger.
+      className="fixed inset-0 z-[100]"
+      // Remounts every navigation so the canvas/particles/timers always
+      // restart clean instead of resuming mid-animation on a rapid re-trigger.
       key={destination}
     >
-      {/* 1. grid dive — a second, scaled instance so the shared background
-          one stays untouched underneath */}
-      <div className="warp-grid-zoom absolute inset-0">
-        <GridBackground horizon="46%" bands accents floor />
-      </div>
-
-      {/* 2. blurs/dims whatever is behind it (live page + the zoom grid) —
-          stands in for blurring the page content itself */}
-      <div className="warp-scrim absolute inset-0" style={{ background: 'rgba(2,4,16,0.5)' }} />
-
-      {/* 3. full-screen white flash, peaks mid-transition */}
-      <div
-        className="warp-flash absolute inset-0"
-        style={{
-          background:
-            'radial-gradient(circle, #ffffff 0%, #eafff5 35%, rgba(255,255,255,0.4) 65%, rgba(255,255,255,0) 100%)',
-        }}
-      />
-
-      {/* 4. particle burst, crisp and unblurred on top */}
-      <div className="absolute inset-0">
-        {BURST.map((b, i) => (
-          <BurstSprite key={i} {...b} />
-        ))}
-      </div>
+      <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
     </div>
   )
 }

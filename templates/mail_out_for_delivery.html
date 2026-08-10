@@ -1,50 +1,57 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Out For Delivery</title>
-    <style>
-        body { margin: 0; padding: 0; background-color: #f4f4f4; font-family: Arial, sans-serif; color: #333; }
-        .wrapper { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .header { background-color: #7b1fa2; padding: 32px 24px; text-align: center; }
-        .header h1 { margin: 0; color: #ffffff; font-size: 24px; letter-spacing: 1px; }
-        .header p { margin: 6px 0 0; color: #e1bee7; font-size: 13px; }
-        .body { padding: 32px 24px; }
-        .body h2 { margin-top: 0; font-size: 20px; }
-        .body p { line-height: 1.6; font-size: 15px; color: #555; }
-        .info-box { background-color: #f9f0ff; border-left: 4px solid #7b1fa2; border-radius: 4px; padding: 16px 20px; margin: 24px 0; }
-        .info-box table { width: 100%; border-collapse: collapse; }
-        .info-box td { padding: 6px 0; font-size: 14px; }
-        .info-box td:first-child { color: #888; width: 45%; }
-        .info-box td:last-child { font-weight: bold; color: #222; }
-        .status-badge { display: inline-block; background-color: #f3e5f5; color: #6a1b9a; border-radius: 12px; padding: 4px 14px; font-size: 13px; font-weight: bold; }
-        .alert { background-color: #fffde7; border: 1px solid #f9a825; border-radius: 4px; padding: 12px 16px; margin: 16px 0; font-size: 14px; color: #5d4037; }
-        .footer { background-color: #f9f9f9; border-top: 1px solid #eee; text-align: center; padding: 20px 24px; font-size: 12px; color: #aaa; }
-    </style>
-</head>
-<body>
-    <div class="wrapper">
-        <div class="header">
-            <h1>FastShip Deliveries</h1>
-            <p>Your delivery is almost there!</p>
+{% extends "_mail_base.html" %}
+{% import "_mail_parts.html" as p %}
+
+{% block accent %}#4ec3d9{% endblock %}
+{% block title %}Out For Delivery{% endblock %}
+{% block brand_sub %}OUT FOR DELIVERY{% endblock %}
+{% block preview %}Arriving today — have your delivery code ready.{% endblock %}
+{% block eyebrow %}OUT FOR DELIVERY{% endblock %}
+{% block heading %}ARRIVING TODAY{% endblock %}
+
+{% block lede %}
+Your package is out for delivery and will arrive soon. Please be available to
+receive it.
+{% endblock %}
+
+{% block rows %}
+  {{ p.row('ORDER ID', shipment_id) }}
+  {{ p.row('CONTENTS', content) }}
+  {{ p.row_status('STATUS', '#4ec3d9', 'OUT FOR DELIVERY', last=true) }}
+{% endblock %}
+
+{% block after_details %}
+{#
+  The delivery code is only in this email when the shipment has no phone number
+  on it — otherwise ShipmentEventService._notify() texts it instead and never
+  puts it in the context. So the block is conditional: printing an empty box
+  would be worse than printing nothing.
+
+  This used to read {{ code }}. The context key is `otp`, so the number never
+  rendered at all and a recipient with no phone on file was emailed an empty
+  space where their code should have been — leaving them unable to complete a
+  handover that requires it.
+#}
+{# `is defined` rather than a bare truth test: on the SMS path the key is absent
+   from the context entirely, and a bare {% if otp %} raises under a strict
+   undefined policy instead of quietly skipping the block. #}
+{% if otp is defined and otp %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td class="fs-pad" style="padding:24px 34px 0;">
+      {% call p.notice('#fbbf24') %}
+        <div style="font-family:{{ p.F_PIXEL }}; font-size:9px; letter-spacing:1px; color:#fbbf24; padding-bottom:16px;">[ DELIVERY CODE ]</div>
+        <div style="font-family:{{ p.F_PIXEL }}; font-size:26px; letter-spacing:6px; color:#ffffff; padding-bottom:18px;">{{ otp }}</div>
+        <div style="font-family:{{ p.F_TERM }}; font-size:18px; line-height:1.45; color:#c3d3e6;">
+          Share this code with the delivery agent when you receive your order.
+          Do not share it with anyone else.
         </div>
-        <div class="body">
-            <h2>Out For Delivery</h2>
-            <p>Your package is out for delivery today and will arrive soon. Please be available to receive it.</p>
-            <div class="info-box">
-                <table>
-                    <tr><td>Order ID</td><td>{{ shipment_id }}</td></tr>
-                    <tr><td>Contents</td><td>{{ content }}</td></tr>
-                    <tr><td>Delivery Window</td><td>8:00 AM – 11:00 PM</td></tr>
-                    <tr><td>Status</td><td><span class="status-badge">Out For Delivery</span></td></tr>
-                </table>
-            </div>
-            <div class="alert">
-                Please share the <strong>OTP</strong> {{code}} with the delivery agent upon receiving your order. Agent helpline: <strong>18000 XXX XXX</strong>
-            </div>
-        </div>
-        <div class="footer">&copy; 2026 FastShip Deliveries &nbsp;|&nbsp; This is an automated email, please do not reply.</div>
-    </div>
-</body>
-</html>
+      {% endcall %}
+    </td>
+  </tr>
+</table>
+{% endif %}
+{% endblock %}
+
+{% block outro %}
+Thank you for choosing FastShip.
+{% endblock %}

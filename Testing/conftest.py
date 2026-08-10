@@ -28,7 +28,9 @@ async def client():
 @pytest_asyncio.fixture(scope="session")
 async def seller_token(client: AsyncClient):
     respone = await client.post(
-        "/seller/login",
+        # The route is /seller/token; /seller/login has never existed, so this
+        # fixture 404'd and any test depending on it failed before it ran.
+        "/seller/token",
         data={
             "grant_type": "password",
             "username": example.SELLER["email"],
