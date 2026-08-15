@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import FieldRow from '../components/FieldRow'
+import useMagnetic from '../motion/useMagnetic'
 import { BoxIcon } from '../components/PixelIcons'
 import { TRACKING_URL } from '../api/client'
 
@@ -17,7 +18,14 @@ const PAD_X = 30
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+// Full-width submits take a much gentler pull than the site's freestanding
+// buttons: at any real strength a wide bar leaning sideways reads as the card
+// being misaligned rather than as the button reaching for you. What it is
+// really here for is the shared press feedback (.mag:active in motion.css).
+const SUBMIT_PULL = { strength: 3 }
+
 function Track() {
+  const track = useMagnetic(SUBMIT_PULL)
   const [shipmentId, setShipmentId] = useState('')
   const [error, setError] = useState('')
   const [warning, setWarning] = useState('')
@@ -88,8 +96,9 @@ function Track() {
       )}
 
       <button
+        ref={track}
         type="submit"
-        className="bracket-btn cut-corners mt-[20px] w-full cursor-pointer py-[16px] font-[inherit] text-[16px] leading-none"
+        className="bracket-btn mag cut-corners mt-[20px] w-full cursor-pointer py-[16px] font-[inherit] text-[16px] leading-none"
       >
         [ TRACK ORDER ]
       </button>

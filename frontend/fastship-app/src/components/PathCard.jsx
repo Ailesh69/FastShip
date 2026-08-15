@@ -1,9 +1,18 @@
+import useTilt from '../motion/useTilt'
+import useMagnetic from '../motion/useMagnetic'
+
 // One "choose your path" card: heading, pixel icon, three-line blurb and a
 // SELECT affordance.
 //
 // SELECT is framed by four small orange corner marks rather than literal
 // square brackets — a classic RPG menu cursor. Each corner is nudged and
 // tilted a little differently so the frame reads hand-placed, not geometric.
+//
+// This is the site's one real "pick something" screen, so it carries the
+// strongest interaction on the site: the card tilts toward the cursor and
+// lifts, and SELECT leans after it. The tilt ref goes on the .path-card
+// element itself and the magnet ref on the button itself, so neither adds a
+// wrapper and an untouched card is identical to before.
 
 const CORNERS = [
   // [vertical, horizontal, which borders, tilt]
@@ -34,8 +43,14 @@ function CornerMark({ spec }) {
 }
 
 function PathCard({ title, icon, lines, onSelect }) {
+  const tilt = useTilt({ max: 8, lift: 22 })
+  const select = useMagnetic({ strength: 5 })
+
   return (
-    <div className="path-card flex w-[286px] flex-col items-center rounded-[4px] px-[14px] pt-[34px] pb-[34px]">
+    <div
+      ref={tilt}
+      className="path-card tilt flex w-[286px] flex-col items-center rounded-[4px] px-[14px] pt-[34px] pb-[34px]"
+    >
       {/* Heading */}
       <h2 className="white-glow m-0 whitespace-nowrap text-[15px] leading-none">{title}</h2>
 
@@ -53,9 +68,10 @@ function PathCard({ title, icon, lines, onSelect }) {
 
       {/* SELECT, inside its retro corner frame */}
       <button
+        ref={select}
         type="button"
         onClick={onSelect}
-        className="relative mt-[40px] cursor-pointer border-0 bg-transparent px-[6px] py-[2px] font-[inherit] text-[14px] leading-none text-fs-green"
+        className="mag relative mt-[40px] cursor-pointer border-0 bg-transparent px-[6px] py-[2px] font-[inherit] text-[14px] leading-none text-fs-green"
         style={{ textShadow: '0 0 8px rgba(125,232,126,0.85), 0 0 18px rgba(125,232,126,0.45)' }}
       >
         {CORNERS.map((spec, i) => (

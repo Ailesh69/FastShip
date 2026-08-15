@@ -266,19 +266,24 @@
   letter-spacing: 1px;
 }
 
-/* Motion is decoration here — none of it carries information that the
-   colour, position and text do not already carry. Someone who has asked
-   their OS for reduced motion gets the page fully static.
-   This works because every animation above only ever animates AWAY from
-   the element's resting style: with `animation: none` the rail sits at
-   its full inline width, log entries at opacity 1, motes at their base
-   opacity. Nothing is left mid-transition. */
-@media (prefers-reduced-motion: reduce) {
-  .bg-floor, .mote, .panel, .rail-fill, .node.now, .node.now::after, .ev {
-    animation: none !important;
-  }
-  .mote { opacity: 0.5; }
-}
+/* Motion here is decoration, and this site deliberately does NOT honour
+   `prefers-reduced-motion` — the animation plays for every visitor. That
+   matches the SPA, whose single switch and reasoning live in
+   frontend/fastship-app/src/motion/motionPolicy.js.
+
+   To make this page static again for that preference, re-add:
+
+     @media (prefers-reduced-motion: reduce) {
+       .bg-floor, .mote, .panel, .rail-fill, .node.now, .node.now::after, .ev {
+         animation: none !important;
+       }
+       .mote { opacity: 0.5; }
+     }
+
+   That was safe because every animation above only ever animates AWAY from
+   the element's resting style: with `animation: none` the rail sits at its
+   full inline width, log entries at opacity 1, motes at their base opacity —
+   nothing is left stranded mid-transition. */
 {% endblock %}
 
 {% block content %}

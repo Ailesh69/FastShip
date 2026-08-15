@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import FieldRow from '../components/FieldRow'
+import useMagnetic from '../motion/useMagnetic'
 import { CargoShip, LockIcon, MailIcon, MarketStall, PersonIcon } from '../components/PixelIcons'
 import { useLoadingNav } from '../context/loadingNav'
 import { useAuth } from '../context/auth'
@@ -63,6 +64,11 @@ function Login() {
   const { state } = useLocation()
   const blockedFrom = state?.from ?? null
   const { login } = useAuth()
+  // Gentle pull on full-width bars — see the note in Track.jsx. The reset
+  // button only exists while its panel is open, which is exactly why these
+  // hooks hand back callback refs (see useMagnetic).
+  const signIn = useMagnetic({ strength: 3 })
+  const sendReset = useMagnetic({ strength: 3 })
   const [role, setRole] = useState(null) // null = nothing chosen yet
   const [values, setValues] = useState({ email: '', password: '' })
   const [errors, setErrors] = useState({})
@@ -247,10 +253,11 @@ function Login() {
             autoComplete="email"
           />
           <button
+            ref={sendReset}
             type="button"
             onClick={handleReset}
             disabled={resetBusy}
-            className="bracket-btn cut-corners mt-[10px] w-full cursor-pointer py-[11px] font-[inherit] text-[10px] leading-none disabled:cursor-wait disabled:opacity-60"
+            className="bracket-btn mag cut-corners mt-[10px] w-full cursor-pointer py-[11px] font-[inherit] text-[10px] leading-none disabled:cursor-wait disabled:opacity-60"
           >
             {resetBusy ? '[ SENDING... ]' : '[ SEND RESET LINK ]'}
           </button>
@@ -273,9 +280,10 @@ function Login() {
       )}
 
       <button
+        ref={signIn}
         type="submit"
         disabled={busy}
-        className="bracket-btn cut-corners mt-[15px] w-full cursor-pointer py-[16px] font-[inherit] text-[16px] leading-none disabled:cursor-wait disabled:opacity-60"
+        className="bracket-btn mag cut-corners mt-[15px] w-full cursor-pointer py-[16px] font-[inherit] text-[16px] leading-none disabled:cursor-wait disabled:opacity-60"
       >
         {busy ? '[ SIGNING IN... ]' : '[ LOG IN ]'}
       </button>

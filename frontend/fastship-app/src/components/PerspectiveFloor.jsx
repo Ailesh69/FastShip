@@ -22,6 +22,22 @@
 const W = 1372
 const H = 880
 const CX = W / 2
+
+// Horizontal overscan, in viewBox units, for the depth lines only.
+//
+// The floor plane is a `.par` parallax layer (GridBackground), so it slides a
+// few px sideways with the pointer. The depth lines are the one thing here
+// that spans edge to edge, so without this they would slide inboard and leave
+// a bare strip down one side of the viewport.
+//
+// It is drawn OUTSIDE the viewBox — with `overflow: visible` on the <svg>, so
+// the viewBox mapping is untouched and every line stays exactly where the
+// measured geometry puts it. Widening the element instead would have stretched
+// the whole floor horizontally (preserveAspectRatio="none"), which moves every
+// vertical and changes the convergence the art was matched against.
+// The parent .floor-fade is inset-0 and carries the mask, so the overspill is
+// clipped at the viewport edge where it should be.
+const EDGE_PAD = 60
 const VP_RISE = 376 // vanishing point clearance above the horizon
 const SPACING_AT_HORIZON = 88.6 // gap between adjacent verticals on the horizon
 const DEPTH_STEP = 0.0001342 // harmonic step for the horizontal lines
@@ -79,6 +95,9 @@ function PerspectiveFloor({ horizonY = 405 }) {
       className="absolute inset-0 h-full w-full"
       viewBox={`0 0 ${W} ${H}`}
       preserveAspectRatio="none"
+      // Lets the EDGE_PAD overspill paint past the viewBox instead of being
+      // clipped back to it. The parent's mask still bounds the layer.
+      style={{ overflow: 'visible' }}
       aria-hidden="true"
     >
       <g
@@ -107,9 +126,9 @@ function PerspectiveFloor({ horizonY = 405 }) {
           <line
             key={`h${i}`}
             className="floor-line"
-            x1="0"
+            x1={-EDGE_PAD}
             y1={y}
-            x2={W}
+            x2={W + EDGE_PAD}
             y2={y}
             style={{ '--dy': `${dy}px` }}
           />
