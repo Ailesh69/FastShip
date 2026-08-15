@@ -172,17 +172,48 @@ const LAYOUTS = {
 
 /* ============================ PRIMITIVES ============================ */
 
+// Sprite-field parallax, in px of travel at full pointer deflection for a
+// sprite at depth 1. Negative: the field slides away from the cursor, same
+// camera-pan direction as the grid planes behind it (see motion.css).
+//
+// These are larger than the floor's amplitude on purpose — the sprites are the
+// NEAR plane. The gap between the two is what gives the background its
+// dimension: pan the cursor and the sparkles visibly overtake the grid.
+const SPRITE_X = -24
+const SPRITE_Y = -13
+
 // Absolutely-positioned wrapper. `at` is an [left%, top%] pair pulled from the
 // active layout; `anim` is an anim-* class from index.css and `delay` staggers
 // it against its neighbours.
-function At({ at, anim = '', delay = 0, children }) {
+//
+// `depth` places the sprite in the field's Z order: ~0.3 for the far texture
+// specks, ~1.3 for the big foreground sparkle. It only scales how far the
+// sprite travels against the pointer; its resting position is still exactly
+// the [left%, top%] measured off the reference art.
+//
+// The parallax lives on the OUTER element and the ambient animation on an
+// inner one. Both are transforms, and the anim-* keyframes in index.css set
+// `transform` outright — on a single element the animation would win every
+// frame and the parallax would never be applied at all.
+function At({ at, anim = '', delay = 0, depth = 0, children }) {
   const [l, t] = at
   return (
     <div
-      className={`absolute ${anim}`}
-      style={{ left: `${l}%`, top: `${t}%`, animationDelay: `${delay}s` }}
+      className={depth ? 'par absolute' : 'absolute'}
+      style={{
+        left: `${l}%`,
+        top: `${t}%`,
+        ...(depth
+          ? {
+              '--par-x': `${(depth * SPRITE_X).toFixed(1)}px`,
+              '--par-y': `${(depth * SPRITE_Y).toFixed(1)}px`,
+            }
+          : null),
+      }}
     >
-      {children}
+      <div className={anim} style={{ animationDelay: `${delay}s` }}>
+        {children}
+      </div>
     </div>
   )
 }
@@ -210,36 +241,47 @@ function PixelSprites({ layout = 'hero' }) {
   const at = LAYOUTS[layout] ?? LAYOUTS.hero
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden="true">
+    // The field as a whole lags the page slightly on scroll (`--par-s`), so on
+    // the pages long enough to scroll it separates from the content in front
+    // of it. Small: 5px of drift per 100px scrolled. Individual sprites add
+    // their own pointer parallax on top, via `depth` on <At>.
+    // `sprite-field` is a hook with no styles of its own — the intro uses it to
+    // drop this layer out of the frame while it covers the screen (see
+    // .fsi-playing in fastship-intro.css).
+    <div
+      className="sprite-field par pointer-events-none absolute inset-0 z-0 overflow-hidden"
+      style={{ '--par-s': 0.05 }}
+      aria-hidden="true"
+    >
       {/* ---------------- LEFT HALF ---------------- */}
 
       {/* blue diagonal arrow / cursor — slow float */}
-      <At at={at.arrow} anim="anim-drift">
+      <At at={at.arrow} anim="anim-drift" depth={0.8}>
         <PixelArt rows={ARROW} palette={ARROW_PALETTE} scale={2} />
       </At>
 
       {/* short brown-orange rule */}
-      <At at={at.brownRule} anim="anim-marquee" delay={0.6}>
+      <At at={at.brownRule} anim="anim-marquee" delay={0.6} depth={0.5}>
         <Bar w={38} h={4} color="#b4652f" />
       </At>
 
       {/* green-cored chip in a teal frame — CRT glow blink */}
-      <At at={at.chip} anim="anim-crt" delay={0.2}>
+      <At at={at.chip} anim="anim-crt" delay={0.2} depth={0.7}>
         <PixelArt rows={CHIP} palette={CHIP_PALETTE} scale={2.4} />
       </At>
 
       {/* orange ridge tile — idle bob */}
-      <At at={at.creature} anim="anim-bob" delay={0.4}>
+      <At at={at.creature} anim="anim-bob" delay={0.4} depth={1.15}>
         <PixelArt rows={CREATURE} palette={CREATURE_PALETTE} scale={3} />
       </At>
 
       {/* short green upright tick */}
-      <At at={at.greenTick}>
+      <At at={at.greenTick} depth={0.45}>
         <Bar w={5} h={18} color="#39ff14" anim="anim-vu" delay={1} />
       </At>
 
       {/* long green rule running in from the left edge, with lead-in dots */}
-      <At at={at.greenRule}>
+      <At at={at.greenRule} depth={0.35}>
         <div className="flex items-center gap-[5px]">
           <Bar w={4} h={3} color="#39ff14" anim="anim-marquee" delay={0} />
           <Bar w={4} h={3} color="#39ff14" anim="anim-marquee" delay={0.3} />
@@ -248,7 +290,7 @@ function PixelSprites({ layout = 'hero' }) {
       </At>
 
       {/* two stacked teal dots, hard against the left edge */}
-      <At at={at.tealDots}>
+      <At at={at.tealDots} depth={0.4}>
         <div className="flex flex-col gap-[5px]">
           <Bar w={5} h={5} color="#22d3ee" anim="anim-twinkle" delay={0.2} />
           <Bar w={5} h={5} color="#22d3ee" anim="anim-twinkle" delay={0.9} />
@@ -258,12 +300,12 @@ function PixelSprites({ layout = 'hero' }) {
       {/* ---------------- RIGHT HALF ---------------- */}
 
       {/* gold gear — idle bob */}
-      <At at={at.gear} anim="anim-bob" delay={1.1}>
+      <At at={at.gear} anim="anim-bob" delay={1.1} depth={0.75}>
         <PixelArt rows={GEAR} palette={GEAR_PALETTE} scale={2} />
       </At>
 
       {/* dark monolith / screen slab */}
-      <At at={at.monolith} anim="anim-twinkle-slow" delay={1.4}>
+      <At at={at.monolith} anim="anim-twinkle-slow" delay={1.4} depth={0.6}>
         <div
           style={{
             width: 24,
@@ -275,12 +317,12 @@ function PixelSprites({ layout = 'hero' }) {
       </At>
 
       {/* bright green plumb line — VU pulse hanging from the top */}
-      <At at={at.plumb}>
+      <At at={at.plumb} depth={0.55}>
         <Bar w={3} h={106} color="#39ff14" opacity={0.85} anim="anim-vu-down" delay={0.5} />
       </At>
 
       {/* teal dashes + green rule under the monolith — marquee cycle */}
-      <At at={at.dashes}>
+      <At at={at.dashes} depth={0.5}>
         <div className="flex items-center gap-[4px]">
           <Bar w={5} h={4} color="#1e6f7a" glow={false} anim="anim-marquee" delay={0} />
           <Bar w={5} h={4} color="#1e6f7a" glow={false} anim="anim-marquee" delay={0.25} />
@@ -290,7 +332,7 @@ function PixelSprites({ layout = 'hero' }) {
       </At>
 
       {/* orange + blue bar stack — staggered VU meter */}
-      <At at={at.barStack}>
+      <At at={at.barStack} depth={0.65}>
         <div className="flex flex-col gap-[4px]">
           <Bar w={13} h={4} color="#39ff14" anim="anim-vu" delay={0} />
           <Bar w={13} h={6} color="#2f6fd0" anim="anim-vu" delay={0.3} />
@@ -303,12 +345,12 @@ function PixelSprites({ layout = 'hero' }) {
       </At>
 
       {/* twinkling teal sparkle — same SPARKLE silhouette as the bottom-right one */}
-      <At at={at.sparkleTeal} anim="anim-twinkle" delay={0.7}>
+      <At at={at.sparkleTeal} anim="anim-twinkle" delay={0.7} depth={0.7}>
         <PixelArt rows={SPARKLE} palette={SPARKLE_TEAL_PALETTE} scale={2.4} />
       </At>
 
       {/* right-edge telemetry bars — marquee cycle */}
-      <At at={at.telemetry}>
+      <At at={at.telemetry} depth={0.45}>
         <div className="flex flex-col gap-[6px]">
           <Bar w={131} h={5} color="#f97316" anim="anim-marquee" delay={0} />
           <Bar w={131} h={4} color="#2f6fd0" anim="anim-marquee" delay={0.35} />
@@ -321,11 +363,11 @@ function PixelSprites({ layout = 'hero' }) {
       </At>
 
       {/* small filled orange square — VU pulse */}
-      <At at={at.orangeSquare}>
+      <At at={at.orangeSquare} depth={0.6}>
         <Bar w={11} h={16} color="#f97316" anim="anim-vu" delay={0.8} />
       </At>
 
-      <At at={at.lowerBars}>
+      <At at={at.lowerBars} depth={0.5}>
         <div className="flex flex-col gap-[7px]">
           <Bar w={22} h={5} color="#b4652f" glow={false} anim="anim-marquee" delay={0.2} />
           <div className="flex gap-[9px]">
@@ -337,29 +379,42 @@ function PixelSprites({ layout = 'hero' }) {
       </At>
 
       {/* four-point sparkle, low and right — slow twinkle */}
-      <At at={at.sparkle} anim="anim-twinkle-slow" delay={0.3}>
+      <At at={at.sparkle} anim="anim-twinkle-slow" delay={0.3} depth={1.3}>
         <PixelArt rows={SPARKLE} palette={SPARKLE_PALETTE} scale={3.5} />
       </At>
 
       {/* ---------------- TEXTURE DOTS ----------------
           Single pixels at low opacity, sprinkled across both halves. Delay and
-          duration are derived from the index so no two twinkle together. */}
-      {at.dots.map(([l, t, color], i) => (
-        <div
-          key={`${l}-${t}`}
-          className="anim-twinkle absolute"
-          style={{
-            left: `${l}%`,
-            top: `${t}%`,
-            width: 4,
-            height: 4,
-            background: color,
-            boxShadow: `0 0 4px ${color}`,
-            animationDelay: `${((i * 0.43) % 3).toFixed(2)}s`,
-            animationDuration: `${(1 + (i % 5) * 0.2).toFixed(1)}s`,
-          }}
-        />
-      ))}
+          duration are derived from the index so no two twinkle together.
+
+          These take the parallax on the SAME element as their animation —
+          unlike the sprites above, which need the extra wrapper. `twinkle`
+          animates opacity only, so there is no transform for it to clobber.
+
+          Depth is derived from the index too (0.28-0.58), which scatters them
+          through the near/far range instead of moving the whole speckle field
+          as one flat sheet. */}
+      {at.dots.map(([l, t, color], i) => {
+        const depth = 0.28 + (i % 4) * 0.1
+        return (
+          <div
+            key={`${l}-${t}`}
+            className="anim-twinkle par absolute"
+            style={{
+              left: `${l}%`,
+              top: `${t}%`,
+              width: 4,
+              height: 4,
+              background: color,
+              boxShadow: `0 0 4px ${color}`,
+              animationDelay: `${((i * 0.43) % 3).toFixed(2)}s`,
+              animationDuration: `${(1 + (i % 5) * 0.2).toFixed(1)}s`,
+              '--par-x': `${(depth * SPRITE_X).toFixed(1)}px`,
+              '--par-y': `${(depth * SPRITE_Y).toFixed(1)}px`,
+            }}
+          />
+        )
+      })}
     </div>
   )
 }

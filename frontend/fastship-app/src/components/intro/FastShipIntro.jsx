@@ -44,6 +44,17 @@ export default function FastShipIntro({
     }, 620);
   }, [onComplete, once, storageKey]);
 
+  // While the intro is actually covering the screen, take the landing page's
+  // animated scenery out of the frame — see the `.fsi-playing` note in
+  // fastship-intro.css for why and for the measurements. The class comes off
+  // as soon as `leaving` flips, so the scene is painting again underneath
+  // before the 620ms fade-out is done and nothing appears to pop in.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle('fsi-playing', mounted && !leaving);
+    return () => root.classList.remove('fsi-playing');
+  }, [mounted, leaving]);
+
   // if the intro is being skipped entirely, still tell the parent
   useEffect(() => {
     if (!mounted && !finishedRef.current) {
@@ -54,10 +65,6 @@ export default function FastShipIntro({
 
   useEffect(() => {
     if (!mounted) return undefined;
-
-    const reduced =
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const engine = new FastShipIntroEngine(canvasRef.current, {
       pixelSize,
@@ -74,7 +81,12 @@ export default function FastShipIntro({
     });
     engineRef.current = engine;
     engine.start();
-    if (reduced) engine.finish();
+    // No `if (reduced) engine.finish()` here any more. That call jumped
+    // straight to the resting frame, so anyone with the OS reduced-motion
+    // preference set never saw the intro at all — it looked like the animation
+    // was simply broken. The site does not honour that preference by design;
+    // see src/motion/motionPolicy.js for the switch and the reasoning.
+    // `finish()` itself is kept — Skip / Escape / click still use it.
 
     const onKey = (e) => {
       if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') complete();

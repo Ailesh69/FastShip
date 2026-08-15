@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { startDepthEngine } from './motion/depthEngine'
 import GridBackground from './components/GridBackground'
 import PixelSprites from './components/PixelSprites'
 import Navbar from './components/Navbar'
@@ -57,6 +59,11 @@ function Shell() {
   const { pathname } = useLocation()
   const scene = sceneFor(pathname)
 
+  // One pointer/scroll listener and one rAF loop for the whole site. It
+  // publishes --dx/--dy/--sy on <html>; every parallax layer reads them in
+  // CSS, so nothing here re-renders as the cursor moves. See motion/.
+  useEffect(startDepthEngine, [])
+
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden">
       {/* navy base + grid horizon behind everything */}
@@ -75,8 +82,19 @@ function Shell() {
 
       {/* The routed page is pinned to the top of the remaining space so the
           hero's own spacing decides where the horizon falls. Pages that want
-          to sit centred instead use `my-auto` on their root. */}
-      <main className="relative z-10 flex flex-1 flex-col items-center pt-[70px]">
+          to sit centred instead use `my-auto` on their root.
+
+          `key={pathname}` remounts this element on every navigation, which is
+          what restarts the .page-enter animation (motion.css) — the
+          destination settles in as the loading/warp overlay clears instead of
+          snapping into place. The key goes HERE, on the existing <main>,
+          rather than on a new wrapper: pages rely on being direct flex
+          children of this element (`flex-1` on Home, `my-auto` on
+          SelectPath), and inserting a div between them would break that. */}
+      <main
+        key={pathname}
+        className="page-enter relative z-10 flex flex-1 flex-col items-center pt-[70px]"
+      >
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />

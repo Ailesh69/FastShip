@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import Reveal from '../motion/Reveal'
 import { useLoadingNav } from '../context/loadingNav'
 import { useAuth } from '../context/auth'
 import { getProfile } from '../api/auth'
@@ -41,10 +42,12 @@ function Dashboard() {
   return (
     <section className="relative z-10 w-full px-4 pb-10">
       {/* Headings — hero-style glow treatments */}
-      <h1 className="title-glow-clean m-0 text-center text-[24px] leading-none">
+      <Reveal as="h1" className="title-glow-clean m-0 text-center text-[24px] leading-none">
         ORDERS - SHIPMENT TRACKING
-      </h1>
-      <p
+      </Reveal>
+      <Reveal
+        as="p"
+        delay={90}
         className="m-0 mt-[22px] text-center text-[20px] leading-none"
         style={{
           color: '#7de87e',
@@ -52,10 +55,15 @@ function Dashboard() {
         }}
       >
         CLIENT DASHBOARD
-      </p>
+      </Reveal>
 
-      {/* Account panel — the same records shell the table used */}
-      <div className="records-panel cut-corners mx-auto mt-[38px] w-full max-w-[950px]">
+      {/* Account panel — the same records shell the table used.
+          Reveal only, no tilt: these are wide reading surfaces, and text that
+          swings under the cursor is harder to read, not more premium. */}
+      <Reveal
+        delay={180}
+        className="records-panel cut-corners mx-auto mt-[38px] w-full max-w-[950px]"
+      >
         <div className="records-caption px-4 py-[14px] text-center text-[13px] leading-none">
           ACCOUNT
         </div>
@@ -89,10 +97,13 @@ function Dashboard() {
             </dl>
           )}
         </div>
-      </div>
+      </Reveal>
 
       {/* Shipments */}
-      <div className="records-panel cut-corners mx-auto mt-[26px] w-full max-w-[950px]">
+      <Reveal
+        delay={270}
+        className="records-panel cut-corners mx-auto mt-[26px] w-full max-w-[950px]"
+      >
         <div className="records-caption px-4 py-[14px] text-center text-[13px] leading-none">
           SHIPMENT &amp; ORDER RECORDS
         </div>
@@ -114,7 +125,7 @@ function Dashboard() {
             [TRACK A SHIPMENT]
           </button>
         </div>
-      </div>
+      </Reveal>
     </section>
   )
 }

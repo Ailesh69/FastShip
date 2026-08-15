@@ -1,0 +1,265 @@
+/* =========================================================
+   MOTION SYSTEM — depth, reveal, tilt, magnetism, page enter
+   =========================================================
+
+   This file adds DEPTH to the existing design. It defines no colours, no
+   fonts, no spacing and no layout — every rule here animates `transform`
+   and `opacity` only, so nothing in index.css can be visually overridden
+   and every effect runs on the compositor thread.
+
+   The whole system is driven by three custom properties that
+   motion/depthEngine.js writes onto <html> once per frame:
+
+     --dx   pointer X, -1 (left edge) .. 1 (right edge), smoothed
+     --dy   pointer Y, -1 (top edge)  .. 1 (bottom edge), smoothed
+     --sy   smoothed window.scrollY, unitless pixel count
+
+   Consumers never read the pointer themselves — they just multiply these
+   by their own amplitude. One listener, one rAF loop, no React re-renders.
+
+   MOTION LANGUAGE (durations are deliberate and shared):
+     button press / magnet snap  90-140ms   — instant
+     hover, tilt tracking         90ms      — instant
+     tilt / magnet release       420-500ms  — settle with inertia
+     scroll reveal               520ms      — medium
+     page enter                  460ms      — medium
+     pointer depth parallax      ~200ms eq. — slow, continuous
+     ambient sprites (index.css) 1.2-5s     — very slow
+   ========================================================= */
+
+:root {
+  /* Neutral until depthEngine.js starts writing. Every .par element
+     therefore renders at its exact original position on first paint. */
+  --dx: 0;
+  --dy: 0;
+  --sy: 0;
+}
+
+/* =========================================================
+   PARALLAX LAYER
+   `--par-x` / `--par-y` are the layer's travel in px at full pointer
+   deflection; `--par-s` is its scroll multiplier. All three default to zero,
+   so a bare `.par` is a no-op and any element that forgets to set them
+   renders exactly where it always did.
+
+   SIGN CONVENTION: a NEGATIVE amplitude moves the layer AWAY from the
+   pointer, which is the camera-pan read used by every background plane on
+   the site (cursor right -> scene slides left). Positive moves it with the
+   pointer. Nearer planes take the larger magnitude; that difference between
+   planes is the entire depth effect.
+   ========================================================= */
+.par {
+  transform: translate3d(
+    calc(var(--dx) * var(--par-x, 0px)),
+    calc(var(--dy) * var(--par-y, 0px) + var(--sy) * var(--par-s, 0) * 1px),
+    0
+  );
+  will-change: transform;
+}
+
+/* ---------------------------------------------------------
+   ONE OWNER PER TRANSFORM
+   `.par`, `[data-reveal]`, `.tilt` and `.mag` all write the `transform`
+   property, so NO ELEMENT MAY CARRY TWO OF THEM — the later rule wins
+   outright and the other effect silently does nothing.
+
+   Where two are wanted on the same thing, nest instead. That is why
+   PixelSprites.jsx splits its parallax onto a wrapper around the animated
+   sprite, and why Hero/SelectPath put <Reveal> AROUND a tilting card rather
+   than on it. The exceptions are elements whose only animation is opacity
+   (the texture dots' `twinkle`, the home page's `blink`), which compose with
+   a transform.
+   --------------------------------------------------------- */
+
+/* =========================================================
+   SCROLL REVEAL
+   Elements start slightly low and transparent and settle into their real
+   position — which is the position index.css already gives them, because
+   the resting state is `transform: none`. Nothing is repositioned.
+
+   `data-reveal` is set to "out" on mount and flipped to "in" by
+   motion/Reveal.jsx the first time the element intersects the viewport.
+   ========================================================= */
+[data-reveal] {
+  transition:
+    opacity 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--rv-delay, 0ms);
+}
+
+[data-reveal='out'] {
+  opacity: 0;
+  transform: translate3d(var(--rv-x, 0px), var(--rv-y, 16px), 0) scale(var(--rv-scale, 1));
+  /* Only promoted while it still has somewhere to travel — once revealed the
+     hint is dropped so hundreds of settled elements don't hold layers. */
+  will-change: opacity, transform;
+}
+
+[data-reveal='in'] {
+  opacity: 1;
+  transform: none;
+}
+
+/* Reveal variants. `up` is the default and needs no class. */
+.rv-rise {
+  --rv-y: 30px;
+}
+
+.rv-pop {
+  --rv-y: 10px;
+  --rv-scale: 0.955;
+}
+
+.rv-left {
+  --rv-x: -26px;
+  --rv-y: 0px;
+}
+
+.rv-right {
+  --rv-x: 26px;
+  --rv-y: 0px;
+}
+
+.rv-fade {
+  --rv-y: 0px;
+}
+
+/* =========================================================
+   3D TILT
+   Applied to the card ITSELF (never a wrapper) so no DOM or layout
+   changes. `perspective()` as a transform function keeps the effect local
+   to the element, so cards can tilt inside any container.
+
+   The rest state is `rotate 0 / translateZ 0`, i.e. pixel-identical to the
+   untilted card — a card that is never hovered is never moved.
+   ========================================================= */
+.tilt {
+  --tilt-x: 0deg;
+  --tilt-y: 0deg;
+  --tilt-z: 0px;
+  transform: perspective(var(--tilt-depth, 780px)) rotateX(var(--tilt-x)) rotateY(var(--tilt-y))
+    translate3d(0, 0, var(--tilt-z));
+  /* box-shadow and border-color are re-stated, not decoration: `transition` is
+     a shorthand, and this file loads after index.css (see main.jsx), so this
+     declaration REPLACES the one .path-card sets for its hover glow. Dropping
+     them here would make that glow snap on instead of easing. Every tiltable
+     surface in this design system eases exactly these two, at 0.16-0.18s. */
+  transition:
+    transform 460ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 180ms ease,
+    border-color 180ms ease;
+}
+
+/* While the pointer is actually over the card the transform must track it
+   almost instantly, or the card lags behind the cursor and feels rubbery.
+   On leave the attribute drops and the slow curve above eases it home. */
+.tilt[data-tilting='true'] {
+  transition: transform 90ms linear;
+  will-change: transform;
+}
+
+/* index.css gives these their glow via `filter` / `box-shadow`; tilting adds
+   depth on top without touching either. Cards keep hard edges — no soft
+   shadow, no blur, nothing rounded. */
+
+/* =========================================================
+   MAGNETIC BUTTONS
+   The button leans a few px toward the cursor while it is nearby, then
+   springs back. Travel is capped well inside the button's own padding so
+   the visual hit area never drifts away from the real one.
+   ========================================================= */
+.mag {
+  --mag-x: 0px;
+  --mag-y: 0px;
+  transform: translate3d(var(--mag-x), calc(var(--mag-y) + var(--mag-press, 0px)), 0);
+  /* Same shorthand-replacement reasoning as .tilt above: .bracket-btn and
+     .teal-outline-box ease their hover glow at 0.16-0.18s, and this rule wins,
+     so it has to carry those through. */
+  transition:
+    transform 480ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 170ms ease,
+    border-color 170ms ease,
+    color 150ms ease;
+}
+
+.mag[data-mag='true'] {
+  transition:
+    transform 120ms cubic-bezier(0.33, 1, 0.68, 1),
+    box-shadow 170ms ease,
+    border-color 170ms ease,
+    color 150ms ease;
+  will-change: transform;
+}
+
+/* Physical press — the button takes the click. Shared by every magnetic
+   control so the whole site depresses by the same amount. Only the variable
+   changes: the 120ms tracking transition above is already the right speed for
+   a press, and re-declaring `transition` here would drop the glow easing for
+   the duration of the click. */
+.mag:active {
+  --mag-press: 3px;
+}
+
+/* =========================================================
+   PAGE ENTER
+   Plays on <main> after each navigation. The loading/warp overlay covers
+   the swap itself; this is what the destination does as the overlay clears,
+   so arriving on a page reads as the content settling in rather than
+   snapping.
+
+   `both` leaves the final keyframe applied, and that keyframe is
+   `transform: none` — so <main> is not left as a containing block.
+   ========================================================= */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.page-enter {
+  animation: page-enter 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* =========================================================
+   REDUCED MOTION — NOT HONOURED, BY DESIGN
+   There is deliberately no `@media (prefers-reduced-motion: reduce)` block in
+   this file. Every effect above runs at full amplitude for every visitor.
+   The single switch and the reasoning live in src/motion/motionPolicy.js;
+   index.css has carried the same stance for the sprite and floor animations
+   for longer, and records two regressions caused by gating on the query.
+
+   To honour the preference again, set RESPECT_REDUCED_MOTION = true in
+   motionPolicy.js (that alone restores the JS-side damping for parallax, tilt
+   and magnetism) and re-add here:
+
+     @media (prefers-reduced-motion: reduce) {
+       [data-reveal='out'] { --rv-y: 6px; --rv-x: 0px; --rv-scale: 1; }
+       @keyframes page-enter {
+         from { opacity: 0; transform: translate3d(0, 4px, 0); }
+         to   { opacity: 1; transform: none; }
+       }
+     }
+
+   Whatever you re-add, reduce AMPLITUDE — never `animation: none`. Blanket
+   freezing is what made the scene look dead, twice.
+   ========================================================= */
+
+/* =========================================================
+   COARSE POINTERS / SMALL SCREENS
+   Phones and tablets have no hover, so tilt and magnetism are dead weight
+   there — and pointer parallax is switched off at the source
+   (depthEngine.js never binds pointermove on a coarse device, so --dx/--dy
+   stay 0 and every .par layer sits at its original position for free).
+   Scroll parallax and reveals keep working.
+   ========================================================= */
+@media (hover: none) {
+  .tilt,
+  .mag {
+    transition: none;
+  }
+}

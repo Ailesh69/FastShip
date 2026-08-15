@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import FieldRow from './FieldRow'
+import useMagnetic from '../motion/useMagnetic'
 import { useLoadingNav } from '../context/loadingNav'
 import { apiError } from '../api/client'
 
@@ -26,8 +27,15 @@ function titleSize(title) {
   return Math.min(26, Math.floor(CONTENT_W / title.length))
 }
 
+// A gentle pull on a full-width bar — see the note in Track.jsx. The two
+// buttons take separate hooks because they are in opposite branches of the
+// `registered` swap and only ever one of them exists.
+const SUBMIT_PULL = { strength: 3 }
+
 function SignupForm({ title, fields, submitLabel, onSubmit, validateFields }) {
   const { go } = useLoadingNav()
+  const submit = useMagnetic(SUBMIT_PULL)
+  const toLogin = useMagnetic(SUBMIT_PULL)
   const [values, setValues] = useState(() => Object.fromEntries(fields.map((f) => [f.name, ''])))
   const [errors, setErrors] = useState({})
   const [formError, setFormError] = useState('')
@@ -120,9 +128,10 @@ function SignupForm({ title, fields, submitLabel, onSubmit, validateFields }) {
           </p>
 
           <button
+            ref={toLogin}
             type="button"
             onClick={() => go('/login')}
-            className="bracket-btn cut-corners w-full cursor-pointer py-[16px] font-[inherit] text-[16px] leading-none"
+            className="bracket-btn mag cut-corners w-full cursor-pointer py-[16px] font-[inherit] text-[16px] leading-none"
           >
             [ GO TO LOGIN ]
           </button>
@@ -147,9 +156,10 @@ function SignupForm({ title, fields, submitLabel, onSubmit, validateFields }) {
 
           {/* Submit — same flex gap as the fields above it */}
           <button
+            ref={submit}
             type="submit"
             disabled={busy}
-            className="bracket-btn cut-corners w-full cursor-pointer py-[16px] font-[inherit] text-[16px] leading-none disabled:cursor-wait disabled:opacity-60"
+            className="bracket-btn mag cut-corners w-full cursor-pointer py-[16px] font-[inherit] text-[16px] leading-none disabled:cursor-wait disabled:opacity-60"
           >
             {busy ? '[ CREATING... ]' : submitLabel}
           </button>

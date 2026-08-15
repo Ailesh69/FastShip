@@ -1,4 +1,5 @@
 import { useLocation } from 'react-router-dom'
+import useMagnetic from '../motion/useMagnetic'
 import { useLoadingNav } from '../context/loadingNav'
 import { useAuth } from '../context/auth'
 import { ROLES } from '../config/roles'
@@ -27,6 +28,10 @@ function Navbar() {
   const { pathname } = useLocation()
   const { go } = useLoadingNav()
   const { user, userType, logout } = useAuth()
+  // The bar's one chunky button. The text links beside it are left alone —
+  // nudging inline text around is how a nav starts feeling unreliable to aim
+  // at, and they already have their own colour transition.
+  const editProfile = useMagnetic({ strength: 4 })
 
   // Let modified clicks (new tab/window) fall through to the browser.
   const handle = (to) => (e) => {
@@ -85,9 +90,10 @@ function Navbar() {
           </div>
 
           <button
+            ref={editProfile}
             type="button"
             onClick={() => go(profilePath)}
-            className="bracket-btn cut-corners cursor-pointer px-[14px] py-[10px] font-[inherit] text-[11px] leading-none"
+            className="bracket-btn mag cut-corners cursor-pointer px-[14px] py-[10px] font-[inherit] text-[11px] leading-none"
           >
             [ EDIT PROFILE ]
           </button>
