@@ -32,13 +32,19 @@ function FieldRow({
             autoComplete={autoComplete}
             placeholder={placeholder}
             aria-invalid={error ? 'true' : undefined}
+            data-testid={`field-${name}`}
             className="w-full min-w-0 border-0 bg-transparent font-[inherit] text-[11px] leading-none outline-none"
           />
         </span>
       </label>
 
       {error && (
-        <p className="field-error m-0 mt-[6px] pl-[48px] text-[8px] leading-none">{error}</p>
+        <p
+          data-testid={`error-${name}`}
+          className="field-error m-0 mt-[6px] pl-[48px] text-[8px] leading-none"
+        >
+          {error}
+        </p>
       )}
     </div>
   )

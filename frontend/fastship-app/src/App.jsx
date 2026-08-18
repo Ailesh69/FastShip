@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { startDepthEngine } from './motion/depthEngine'
+import { titleFor } from './config/pageTitles'
 import GridBackground from './components/GridBackground'
 import PixelSprites from './components/PixelSprites'
 import Navbar from './components/Navbar'
@@ -23,6 +24,7 @@ import SellerProfile from './pages/SellerProfile'
 import PartnerDashboard from './pages/PartnerDashboard'
 import UpdateShipment from './pages/UpdateShipment'
 import PartnerProfile from './pages/PartnerProfile'
+import NotFound from './pages/NotFound'
 
 // Per-route background tuning. Every page renders the SAME GridBackground and
 // PixelSprites — these props only move the horizon and shift the sprite field,
@@ -63,6 +65,13 @@ function Shell() {
   // publishes --dx/--dy/--sy on <html>; every parallax layer reads them in
   // CSS, so nothing here re-renders as the cursor moves. See motion/.
   useEffect(startDepthEngine, [])
+
+  // Per-route document title. One effect in the shared shell rather than a
+  // call inside every page: the route table it mirrors is right below, so the
+  // two can't drift, and no page can forget to set one. See config/pageTitles.
+  useEffect(() => {
+    document.title = titleFor(pathname)
+  }, [pathname])
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden">
@@ -190,8 +199,11 @@ function Shell() {
           <Route path="/signup/seller" element={<Navigate to="/seller/signup" replace />} />
           <Route path="/signup/delivery" element={<Navigate to="/partner/signup" replace />} />
 
-          {/* Anything else goes home. */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Anything else renders a real 404. It used to be
+              `<Navigate to="/" replace />`, which meant a mistyped or dead
+              link silently teleported you home and looked exactly like a
+              working one. */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
 

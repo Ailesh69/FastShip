@@ -15,6 +15,19 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+{# Every page built on this base is reached by a link in an email and is
+   addressed by something private in the URL: reset_password.html carries a
+   live password-reset token, review.html a review token, tracking.html a
+   shipment id that exposes that shipment's contents and journey to anyone
+   holding it. None of them should ever appear in a search index.
+
+   This has to be a meta tag rather than a robots.txt rule: robots.txt is
+   per-origin, and the SPA's one lives on the frontend host, not on this API.
+   `noindex` keeps the page out of the index; `nofollow` stops a crawler
+   walking the token-bearing links on it; `noarchive` stops cached copies. #}
+<meta name="robots" content="noindex, nofollow, noarchive" />
+
 <title>{% block title %}FastShip{% endblock %}</title>
 <style>
 /* ---------------------------------------------------------------

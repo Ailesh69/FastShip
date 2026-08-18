@@ -190,6 +190,7 @@ function Login() {
             type="button"
             onClick={() => pick(t.id)}
             aria-pressed={role === t.id}
+            data-testid={`acct-${t.id}`}
             className="acct-card cut-corners flex flex-1 flex-col items-center justify-center gap-[10px] px-[6px] py-[14px]"
           >
             <span className="flex h-[50px] items-center justify-center">{t.icon}</span>
@@ -206,7 +207,10 @@ function Login() {
           putting it under EMAIL made a card-selection problem look like a
           field problem, which reads as "the button does nothing". */}
       {errors.accountType && (
-        <p className="field-error m-0 mt-[8px] text-center text-[8px] leading-none">
+        <p
+          data-testid="error-accountType"
+          className="field-error m-0 mt-[8px] text-center text-[8px] leading-none"
+        >
           {errors.accountType}
         </p>
       )}
@@ -274,7 +278,11 @@ function Login() {
       )}
 
       {formError && (
-        <p className="field-error m-0 mt-[14px] text-center text-[9px] leading-[1.6]" role="alert">
+        <p
+          data-testid="login-form-error"
+          className="field-error m-0 mt-[14px] text-center text-[9px] leading-[1.6]"
+          role="alert"
+        >
           {formError}
         </p>
       )}
@@ -283,6 +291,7 @@ function Login() {
         ref={signIn}
         type="submit"
         disabled={busy}
+        data-testid="login-submit"
         className="bracket-btn mag cut-corners mt-[15px] w-full cursor-pointer py-[16px] font-[inherit] text-[16px] leading-none disabled:cursor-wait disabled:opacity-60"
       >
         {busy ? '[ SIGNING IN... ]' : '[ LOG IN ]'}

@@ -80,7 +80,10 @@ function Navbar() {
           {/* Real photo, themed frame only */}
           <div className="flex items-center gap-[10px]">
             <span className="avatar-frame h-[38px] w-[38px] shrink-0 rounded-[3px]">
-              <img src={user.avatar ?? DEFAULT_AVATAR} alt="" />
+              <img
+                src={user.avatar ?? DEFAULT_AVATAR}
+                alt={user.name ? `${user.name}'s profile photo` : 'Profile photo'}
+              />
             </span>
             <span className="text-[9px] leading-[1.7] text-white">
               Welcome,

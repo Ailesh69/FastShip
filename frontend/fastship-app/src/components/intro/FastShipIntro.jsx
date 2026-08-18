@@ -109,9 +109,16 @@ export default function FastShipIntro({
       <canvas ref={canvasRef} className="fsi-canvas" aria-hidden="true" />
 
       <div ref={titleRef} className="fsi-titleblock" style={{ opacity: 0 }}>
-        <h1 className="fsi-title" data-text={title}>
+        {/* A <div>, not an <h1>. This overlay is portaled onto <body> while the
+            landing page is already mounted underneath, so an <h1> here made the
+            home page carry two of them for the ~10s the intro runs. The real
+            document heading is the hero's <h1> (components/Hero.jsx); this is
+            the same word rendered as a decorative title card, and the
+            screen-reader announcement is the .fsi-sr line below.
+            All styling is class-based, so the tag change is purely semantic. */}
+        <div className="fsi-title" data-text={title}>
           {title}
-        </h1>
+        </div>
         <p className="fsi-tagline">{tagline}</p>
       </div>
 

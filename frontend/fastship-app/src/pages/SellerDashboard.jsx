@@ -97,8 +97,14 @@ function SellerDashboard() {
 
   return (
     <section className="relative z-10 w-full px-4 pb-10">
-      {/* Top-left submit button */}
-      <div className="mx-auto w-full max-w-[950px]">
+      {/* Page heading. Same treatment as the partner dashboard's "ASSIGNED
+          SHIPMENTS" so the two read as siblings — this page was the only one
+          on the site with no <h1> at all. */}
+      <h1 className="title-glow-clean m-0 text-center text-[22px] leading-none">SELLER DASHBOARD</h1>
+
+      {/* Top-left submit button. `mt-[26px]` is the same gap the panel below
+          uses, so the new heading above doesn't crowd it. */}
+      <div className="mx-auto mt-[26px] w-full max-w-[950px]">
         <button
           type="button"
           onClick={() => go('/seller/submit-shipment')}

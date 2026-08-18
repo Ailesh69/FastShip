@@ -141,7 +141,11 @@ function PartnerProfileForm({ partner }) {
               </textPath>
             </text>
           </svg>
-          <img className={p.avatarPhoto} src={photo} alt="" />
+          <img
+            className={p.avatarPhoto}
+            src={photo}
+            alt={values.fullName ? `${values.fullName}'s profile photo` : 'Profile photo'}
+          />
         </button>
 
         <input

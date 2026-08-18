@@ -3,6 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- iOS home-screen icon. Safari ignores the SVG favicon above and falls
+         back to a screenshot of the page without this. Reuses the og image
+         since it is the only raster asset here; swap for a square 180x180
+         crop if you ever want the icon tighter on the wordmark. -->
+    <link rel="apple-touch-icon" href="/og-image.png" />
+    <!-- Tints the browser chrome on Android/Chrome to the site's navy
+         (--color-fs-bg in index.css) instead of leaving it white. -->
+    <meta name="theme-color" content="#0a1128" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Pixel fonts are SELF-HOSTED (see @font-face at the top of index.css):
          Press Start 2P for headings/logo/nav/buttons/labels, VT323 for body
@@ -17,7 +25,45 @@
       crossorigin
     />
     <link rel="preload" href="/fonts/vt323-latin.woff2" as="font" type="font/woff2" crossorigin />
-    <title>FastShip</title>
+
+    <!-- Fallback title only. Every route sets its own via src/config/pageTitles.js
+         (applied by the one effect in App.jsx's Shell), so this is what shows
+         before React mounts and what a non-JS crawler reads. -->
+    <title>FastShip — Retro E-Commerce Delivery</title>
+
+    <meta
+      name="description"
+      content="FastShip — a retro pixel-art e-commerce and shipment tracking platform. Browse, ship, and track orders with a 8-bit arcade twist."
+    />
+
+    <!-- Open Graph. og:image must be an ABSOLUTE URL for most scrapers
+         (Facebook, Slack, iMessage) to resolve it — update the host below at
+         the same time as the canonical link. -->
+    <meta property="og:title" content="FastShip" />
+    <meta
+      property="og:description"
+      content="A retro pixel-art e-commerce and shipment tracking platform."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://YOUR-EVENTUAL-DOMAIN.com/" />
+    <!-- Relative for now so it resolves locally. Most scrapers (Facebook,
+         Slack, iMessage) require an ABSOLUTE url and will show no image at
+         all with this — make it https://<host>/og-image.png at the same time
+         as the placeholders below. -->
+    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="The FastShip landing page in 8-bit pixel art" />
+
+    <!-- Without twitter:card, X renders a shared link as a small thumbnail
+         rather than the full-width preview the 1200x630 image is sized for.
+         The og: tags above supply the title/description/image. -->
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- PLACEHOLDER DOMAIN — this app is still local. Replace
+         YOUR-EVENTUAL-DOMAIN.com here, in public/robots.txt and in
+         public/sitemap.xml when the real host is known. -->
+    <link rel="canonical" href="https://YOUR-EVENTUAL-DOMAIN.com/" />
   </head>
   <body>
     <div id="root"></div>

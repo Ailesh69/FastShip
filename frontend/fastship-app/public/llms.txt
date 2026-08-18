@@ -1,0 +1,27 @@
+# FastShip
+
+A retro pixel-art e-commerce and shipment tracking platform. Browse, ship, and
+track orders with an 8-bit arcade twist.
+
+## Public pages
+
+- `/` — landing page
+- `/login` — log in (customer, seller, or delivery partner)
+- `/signup` — account-select, "choose your path"
+- `/client/signup` — customer sign up
+- `/seller/signup` — seller sign up
+- `/partner/signup` — delivery partner sign up
+- `/track` — look up a shipment by ID; no account needed
+
+## Accounts
+
+Three roles, each with its own sign-up, dashboard and profile:
+
+- **Customer** — browses goods and follows their orders.
+- **Seller** — submits shipments and manages their order list.
+- **Delivery partner** — takes assigned shipments and posts status updates.
+
+## Not public
+
+Dashboards, profile editors and the shipment submit/update forms sit behind
+authentication and are excluded from the sitemap and disallowed in robots.txt.
