@@ -7,7 +7,10 @@
 export const GUEST_LINKS = [
   { to: '/', label: 'HOME', highlight: false },
   { to: '/login', label: 'LOGIN/SIGNUP', also: ['/signup'], startsWith: ['/signup/'] },
-  { to: '/track', label: 'TRACK ORDER' },
+  // TRACK ORDER used to sit here. It is a seller tool now and lives in
+  // SELLER_TABS below; /track itself is still reachable by URL so existing
+  // links and bookmarks keep working.
+  { to: '/about', label: 'ABOUT ME' },
 ]
 
 // Signed-in tabs, chosen by the session's userType.
@@ -16,9 +19,13 @@ const CLIENT_TABS = [
   { to: '/client/profile', label: 'EDIT PROFILE' },
 ]
 
+// TRACK ORDER is deliberately here and in no other role's set: a seller needs
+// to look up any shipment they dispatched, whereas the dashboard rows already
+// give clients and partners a per-shipment tracking link.
 const SELLER_TABS = [
   { to: '/seller/dashboard', label: 'DASHBOARD' },
   { to: '/seller/submit-shipment', label: 'SUBMIT SHIPMENT' },
+  { to: '/track', label: 'TRACK ORDER' },
   { to: '/seller/profile', label: 'EDIT PROFILE' },
 ]
 

@@ -24,6 +24,7 @@ import SellerProfile from './pages/SellerProfile'
 import PartnerDashboard from './pages/PartnerDashboard'
 import UpdateShipment from './pages/UpdateShipment'
 import PartnerProfile from './pages/PartnerProfile'
+import About from './pages/About'
 import NotFound from './pages/NotFound'
 
 // Per-route background tuning. Every page renders the SAME GridBackground and
@@ -49,7 +50,15 @@ function RequireAuth({ children }) {
 
 function sceneFor(pathname) {
   if (pathname === '/signup') return SELECT_SCENE
-  if (pathname === '/login' || pathname === '/track' || pathname.endsWith('/signup'))
+  // Centred-card screens share the plain navy + sprite backdrop. /about is one
+  // of them, so it matches the login and track cards rather than sitting on the
+  // hero's floor grid.
+  if (
+    pathname === '/login' ||
+    pathname === '/track' ||
+    pathname === '/about' ||
+    pathname.endsWith('/signup')
+  )
     return FORM_SCENE
   if (isProtected(pathname)) return SELECT_SCENE
   return DEFAULT_SCENE
@@ -106,6 +115,7 @@ function Shell() {
       >
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SelectPath />} />
 

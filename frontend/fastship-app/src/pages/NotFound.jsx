@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import Reveal from '../motion/Reveal'
 import useMagnetic from '../motion/useMagnetic'
 import { useLoadingNav } from '../context/loadingNav'
@@ -19,6 +20,22 @@ import { useLoadingNav } from '../context/loadingNav'
 function NotFound() {
   const { go } = useLoadingNav()
   const home = useMagnetic({ strength: 6 })
+
+  // Soft-404 mitigation. A static host answers every unknown path with the SPA
+  // shell and HTTP 200, so a crawler has no status code telling it this page is
+  // missing and can index an endless supply of dead URLs. This is the signal it
+  // does understand. Added and removed with the component so it is only ever
+  // present on the 404 itself — leaving it behind would de-index a real page.
+  //
+  // If the host can be configured to return a real 404 status for unknown
+  // paths, do that as well; this does not replace it.
+  useEffect(() => {
+    const tag = document.createElement('meta')
+    tag.name = 'robots'
+    tag.content = 'noindex, follow'
+    document.head.appendChild(tag)
+    return () => tag.remove()
+  }, [])
 
   return (
     <section className="relative z-10 my-auto flex flex-col items-center px-4 text-center">
