@@ -1,0 +1,37 @@
+# VCS / editor / tool metadata
+.git
+.idea
+.vscode
+.claude
+.reticle
+
+# Frontend is a separate app, not part of this image
+frontend
+
+# Tests and scan artifacts - not needed at runtime
+Testing
+pytest.ini
+static_analysis_semgrep_1
+static_analysis_semgrep_2
+
+# Python cruft
+__pycache__
+**/__pycache__
+*.pyc
+.venv
+venv
+.wsl-venv
+
+# Secrets - never bake these into an image
+.env
+.env.*
+!.env.example
+
+# Runtime/local artifacts
+*.log
+dump.rdb
+
+# Docker/docs (no reason to be inside their own build context)
+Dockerfile
+.dockerignore
+README*
