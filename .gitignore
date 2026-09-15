@@ -1,20 +1,101 @@
-.wsl-venv/
-__pycache__/
-*.pyc
-*.log
-.venv/
-venv/
+# =============================================================================
+# FastShip — gitignore
+# =============================================================================
 
-# Secrets. .env holds the JWT signing key, the database password and the mail
-# and Twilio credentials — it must never be committed. Use .env.example as the
-# template for a local one.
+# --- Secrets -----------------------------------------------------------------
+# .env holds the JWT signing key, database password, mail and Twilio credentials.
+# Never commit it. Copy .env.example and fill in local values.
 .env
 .env.*
 !.env.example
+!.env.example.*
 
-# Redis snapshot: a dump of live application state, including issued OTPs.
+# --- Python ------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+.eggs/
+build/
+develop-eggs/
+dist/
+downloads/
+sdist/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+MANIFEST
+
+.venv/
+venv/
+ENV/
+env/
+.wsl-venv/
+
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+pytestdebug.log
+
+# --- Node / Vite (frontend/fastship-app) -------------------------------------
+node_modules/
+dist-ssr/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Built SPA output. Keep source; never commit Vite's dist.
+frontend/**/dist/
+
+# --- Redis / Celery ----------------------------------------------------------
 dump.rdb
+celerybeat-schedule
+celerybeat-schedule.*
+*.pid
 
-# macOS / editor cruft
+# --- Logs & runtime ----------------------------------------------------------
+*.log
+logs/
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# --- OS / editors ------------------------------------------------------------
 .DS_Store
+Thumbs.db
 .idea/
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# --- Docker ------------------------------------------------------------------
+docker-compose.override.yml
+
+# --- Local agent / scan artifacts --------------------------------------------
+.reticle/sessions/
+.reticle/capsules/
+.claude/
+.semgrep/
+.scannerwork/
+
+# --- Optional local env for the SPA ------------------------------------------
+frontend/fastship-app/.env
+frontend/fastship-app/.env.local
+frontend/fastship-app/.env.*.local
