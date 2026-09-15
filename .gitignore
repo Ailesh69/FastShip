@@ -89,11 +89,13 @@ Thumbs.db
 docker-compose.override.yml
 
 # --- Local agent / scan artifacts --------------------------------------------
-.reticle/sessions/
-.reticle/capsules/
+.reticle/
 .claude/
 .semgrep/
 .scannerwork/
+static_analysis_semgrep_*/
+frontend/fastship-app/.claude/
+frontend/fastship-app/.reticle.json
 
 # --- Optional local env for the SPA ------------------------------------------
 frontend/fastship-app/.env
