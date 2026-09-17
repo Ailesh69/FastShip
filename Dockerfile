@@ -37,12 +37,13 @@ COPY migrations ./migrations
 COPY templates ./templates
 COPY static ./static
 
-RUN chown -R app:app /app
-USER app
-
-EXPOSE 8000
 
 # The Celery worker uses this same image with the command overridden to
 # `celery -A worker.tasks worker --loglevel=info` (e.g. in docker-compose) -
 # this default CMD is for the API process only.
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh
+RUN chown -R app:app /app
+USER app 
+EXPOSE 8000
+CMD ["./entrypoint.sh"]
