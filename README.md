@@ -20,6 +20,8 @@
 
 [Features](#features) · [Architecture](#architecture) · [Roles](#three-roles-one-pipeline) · [API](#http-api) · [Setup](#getting-started) · [Docker](#run-with-docker)
 
+**[Live app](https://fast-ship-seven.vercel.app)** · **[API docs](https://fastship-backend-qbgl.onrender.com/docs)**
+
 </div>
 
 ---
