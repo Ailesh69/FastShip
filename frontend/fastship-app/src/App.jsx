@@ -27,16 +27,14 @@ import PartnerProfile from './pages/PartnerProfile'
 import About from './pages/About'
 import NotFound from './pages/NotFound'
 
-// Per-route background tuning. Every page renders the SAME GridBackground and
-// PixelSprites — these props only move the horizon and shift the sprite field,
-// so animation behaviour, colours and sprite art stay identical site-wide.
+// Per-route background tuning — same GridBackground/PixelSprites everywhere,
+// these props just move the horizon and sprite field.
 const SELECT_SCENE = { horizon: '85%', bands: false, accents: false, floor: true, sprites: 'select' }
-// Form screens: plain navy + sprite field, no floor grid (per reference art).
+// Form screens: plain navy + sprites, no floor grid.
 const FORM_SCENE = { horizon: '85%', bands: false, accents: false, floor: false, sprites: 'select' }
 const DEFAULT_SCENE = { horizon: '46%', bands: true, accents: true, floor: true, sprites: 'hero' }
 
-// Routes that require the mock session. Without one they bounce to /login,
-// which is what makes Log Out land somewhere sensible.
+// Routes needing a session; unauthed users bounce to /login.
 const PROTECTED_PREFIXES = ['/client/', '/seller/', '/partner/']
 const isProtected = (path) =>
   PROTECTED_PREFIXES.some((p) => path.startsWith(p)) && !path.endsWith('/signup')
@@ -50,9 +48,8 @@ function RequireAuth({ children }) {
 
 function sceneFor(pathname) {
   if (pathname === '/signup') return SELECT_SCENE
-  // Centred-card screens share the plain navy + sprite backdrop. /about is one
-  // of them, so it matches the login and track cards rather than sitting on the
-  // hero's floor grid.
+  // Centred-card screens (login/track/about) share the plain navy backdrop
+  // instead of the hero's floor grid.
   if (
     pathname === '/login' ||
     pathname === '/track' ||
@@ -64,20 +61,17 @@ function sceneFor(pathname) {
   return DEFAULT_SCENE
 }
 
-// Shell is the shared LAYOUT: background + navbar + footer stay mounted on
-// every page, while <Routes> swaps the middle content based on the URL.
+// Shared layout: background + navbar + footer stay mounted; <Routes> swaps
+// the middle content.
 function Shell() {
   const { pathname } = useLocation()
   const scene = sceneFor(pathname)
 
-  // One pointer/scroll listener and one rAF loop for the whole site. It
-  // publishes --dx/--dy/--sy on <html>; every parallax layer reads them in
-  // CSS, so nothing here re-renders as the cursor moves. See motion/.
+  // One pointer/scroll listener + rAF loop site-wide, publishes --dx/--dy/--sy
+  // on <html> for CSS parallax so nothing here re-renders on cursor move.
   useEffect(startDepthEngine, [])
 
-  // Per-route document title. One effect in the shared shell rather than a
-  // call inside every page: the route table it mirrors is right below, so the
-  // two can't drift, and no page can forget to set one. See config/pageTitles.
+  // Per-route title, kept here so it can't drift from the route table below.
   useEffect(() => {
     document.title = titleFor(pathname)
   }, [pathname])
@@ -98,17 +92,9 @@ function Shell() {
       {/* top bar — guest vs signed-in is driven by the mock session */}
       <Navbar />
 
-      {/* The routed page is pinned to the top of the remaining space so the
-          hero's own spacing decides where the horizon falls. Pages that want
-          to sit centred instead use `my-auto` on their root.
-
-          `key={pathname}` remounts this element on every navigation, which is
-          what restarts the .page-enter animation (motion.css) — the
-          destination settles in as the loading/warp overlay clears instead of
-          snapping into place. The key goes HERE, on the existing <main>,
-          rather than on a new wrapper: pages rely on being direct flex
-          children of this element (`flex-1` on Home, `my-auto` on
-          SelectPath), and inserting a div between them would break that. */}
+      {/* key={pathname} remounts on nav to restart .page-enter (motion.css).
+          Key stays on this <main> (not a wrapper div) since pages depend on
+          being direct flex children of it (flex-1 on Home, my-auto on SelectPath). */}
       <main
         key={pathname}
         className="page-enter relative z-10 flex flex-1 flex-col items-center pt-[70px]"
@@ -209,10 +195,7 @@ function Shell() {
           <Route path="/signup/seller" element={<Navigate to="/seller/signup" replace />} />
           <Route path="/signup/delivery" element={<Navigate to="/partner/signup" replace />} />
 
-          {/* Anything else renders a real 404. It used to be
-              `<Navigate to="/" replace />`, which meant a mistyped or dead
-              link silently teleported you home and looked exactly like a
-              working one. */}
+          {/* Real 404 — used to redirect to "/", which hid dead links. */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
@@ -224,14 +207,12 @@ function Shell() {
 
 function App() {
   return (
-    // Auth wraps navigation: the loading transition doesn't read it, but the
-    // navbar and every signed-in page do.
+    // Auth wraps navigation since navbar + signed-in pages need it.
     <AuthProvider>
       <LoadingNavProvider>
         <Shell />
-        {/* transition screens — above everything, blocks interaction while
-            active. Which one shows is picked at random per-navigation
-            (see LoadingNavProvider); only one is ever active at a time. */}
+        {/* Transition overlays, above everything; variant picked at random
+            per-nav in LoadingNavProvider, only one active at a time. */}
         <LoadingOverlay />
         <WarpOverlay />
       </LoadingNavProvider>

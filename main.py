@@ -17,12 +17,7 @@ from utils import STATIC_DIR
 
 
 def _warn_if_links_are_local() -> None:
-    """Say plainly, at boot, when emailed links will only work on this machine.
-
-    This is the single most common way the app appears broken to someone else:
-    the email arrives, the button is there, and it opens to nothing because
-    "localhost" on their phone means their phone.
-    """
+    """Warn at boot if emailed links will only resolve on this machine."""
     if not is_loopback(app_settings.base_url):
         print(
             Panel(
@@ -80,12 +75,9 @@ tags_metadata = [
 app = FastAPI(
     lifespan=lifespan_handler,
     title="FastShip",
-    description="Retro pixel-art shipment tracking and delivery management API.",
+    description="Shipment tracking and delivery management API.",
     version="6.7",
-    # No contact block: OpenAPI validates contact.email as a real address, so
-    # the "REPLACE_WITH_REAL_EMAIL" placeholder that was here made /openapi.json
-    # — and therefore /docs and /scalar — fail with a 500. Add it back with a
-    # genuine address whenever you want it published.
+    # No contact block: a fake placeholder email fails OpenAPI validation and 500s /docs.
     openapi_tags=tags_metadata,
 )
 
@@ -93,27 +85,18 @@ add_exception_handlers(app)
 
 app.add_middleware(
     CORSMiddleware,
-    # Configurable, because the origin the browser used is not always
-    # localhost — a phone or a friend's laptop loads the frontend over the LAN
-    # IP or a tunnel hostname, and an origin missing from this list gets every
-    # request blocked before it reaches a route.
+    # Configurable since the frontend may be loaded via LAN IP or tunnel, not just localhost.
     allow_origins=app_settings.cors_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Must wrap the routes so every handler can see which host the caller used when
-# it builds a link for an email. Added before include_router only for reading
-# order; ASGI middleware order is set by add_middleware regardless.
+# Needed before routes build email links from the request host.
 app.add_middleware(BaseURLMiddleware)
 
 app.include_router(master_router)
 
-# The server-rendered pages (tracking, review, password reset) are opened
-# straight from an email, on devices that may never load the React app — so the
-# pixel typeface has to come from this server, not from the Vite dev server on
-# :5173 and not from fonts.googleapis.com. STATIC_DIR/fonts holds the same two
-# woff2 files the frontend ships.
+# Serves fonts for email-opened pages (tracking/review/reset) that never load the React app.
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
@@ -124,12 +107,7 @@ async def custom_middleware(request: Request, call_next):
     end = perf_counter()
     time_taken = round(end - start, 2)
     log = f"{request.method} {request.url} ({response.status_code}) {time_taken}s"
-    # Handing the log line to Celery talks to the Redis broker over the network.
-    # That call is not optional plumbing the request can rely on: when Redis is
-    # down (or just slow to refuse the connection) .delay() raises, and because
-    # this runs on the way OUT it used to turn every single response — including
-    # plain GET / — into a failure. Access logging is best-effort; losing a line
-    # must never cost the caller their response.
+    # Best-effort: don't let a down Redis broker fail the response.
     try:
         add_log.delay(log)
     except Exception as exc:  # noqa: BLE001 - broker errors must not reach the client

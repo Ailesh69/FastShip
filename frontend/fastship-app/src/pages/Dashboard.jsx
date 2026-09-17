@@ -5,13 +5,9 @@ import { useAuth } from '../context/auth'
 import { getProfile } from '../api/auth'
 import { apiError } from '../api/client'
 
-// CLIENT DASHBOARD.
-//
-// Unlike sellers and partners, a client has no shipment-list endpoint: the
-// backend links a client to shipments by matching their email against a
-// shipment's client_contact_email, and exposes no route that reads it. So this
-// page shows the account itself and points at the tracking page, rather than
-// rendering a table it has no way to fill.
+// CLIENT DASHBOARD. Clients have no shipment-list endpoint — backend only
+// matches shipments by client_contact_email, no route reads it — so this
+// shows the account and points at tracking instead of a table it can't fill.
 
 function Dashboard() {
   const { go } = useLoadingNav()
@@ -32,8 +28,7 @@ function Dashboard() {
         if (!cancelled) setLoading(false)
       }
     })()
-    // The fetch outlives a fast navigation away; the flag stops it writing
-    // state into an unmounted component.
+    // guards against setting state after a fast navigation unmounts this
     return () => {
       cancelled = true
     }
@@ -57,9 +52,7 @@ function Dashboard() {
         CLIENT DASHBOARD
       </Reveal>
 
-      {/* Account panel — the same records shell the table used.
-          Reveal only, no tilt: these are wide reading surfaces, and text that
-          swings under the cursor is harder to read, not more premium. */}
+      {/* reveal only, no tilt — text swinging under cursor hurts readability on wide surfaces */}
       <Reveal
         delay={180}
         className="records-panel cut-corners mx-auto mt-[38px] w-full max-w-[950px]"

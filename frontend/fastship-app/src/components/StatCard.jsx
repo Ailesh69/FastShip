@@ -1,16 +1,10 @@
 import useTilt from '../motion/useTilt'
 
-// One notched stat box, e.g. "500+ / PIXEL GOODS".
+// One notched stat box, e.g. "500+ / PIXEL GOODS". `rim` = border/glow color
+// per box. Diagonal-cut corners (.notch-box/.cut-corners), nothing rounded.
 //
-// `rim` is the border + glow colour, so each box in the row can carry its own
-// theme. Corners are cut on the diagonal (see .notch-box / .cut-corners in
-// index.css) — nothing here is soft-rounded.
-//
-// The box tilts a little toward the cursor and lifts toward the viewer. The
-// ref goes on the .notch-box itself, so no wrapper is introduced and the box
-// is pixel-identical to before whenever it is not being pointed at. Small
-// numbers on purpose: this is a stat readout, not a toy — it should feel
-// solid and machined, not floaty.
+// Tilts+lifts toward cursor; ref on .notch-box itself, no wrapper. Small
+// tilt numbers on purpose — should feel solid/machined, not floaty.
 function StatCard({ icon, value, label, rim }) {
   const tilt = useTilt({ max: 6, lift: 10 })
 

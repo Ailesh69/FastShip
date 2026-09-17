@@ -4,24 +4,17 @@ import useMagnetic from '../motion/useMagnetic'
 import { BoxIcon } from '../components/PixelIcons'
 import { TRACKING_URL } from '../api/client'
 
-// TRACK ORDER entry page.
-//
-// The card, field row and bracket button all come from the same shared
-// components/classes the sign-up and login pages use, so the three can't drift.
-//
-// Submitting deliberately LEAVES the React app: the tracking view itself is a
-// Jinja2 page rendered by the FastAPI backend on a different origin, so this is
-// a full browser navigation, not a router push.
+// TRACK ORDER entry page. Shares card/field/button components with sign-up
+// and login. Submit deliberately leaves the SPA — tracking view is a Jinja2
+// page served by the backend, so it's a full navigation, not a router push.
 
 const CARD_W = 470
 const PAD_X = 30
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-// Full-width submits take a much gentler pull than the site's freestanding
-// buttons: at any real strength a wide bar leaning sideways reads as the card
-// being misaligned rather than as the button reaching for you. What it is
-// really here for is the shared press feedback (.mag:active in motion.css).
+// Gentle pull for full-width buttons — a wide bar leaning at real strength
+// reads as misaligned, not magnetic. Mainly here for the .mag:active press feedback.
 const SUBMIT_PULL = { strength: 3 }
 
 function Track() {
@@ -40,9 +33,7 @@ function Track() {
     e.preventDefault()
     const id = shipmentId.trim()
 
-    // Only guard the empty submit. Real validation — unknown id, wrong format,
-    // expired — belongs to the backend page; this app can't see that state and
-    // shouldn't pretend to.
+    // only guard empty submit — real validation belongs to the backend page
     if (!id) {
       setError('ENTER A SHIPMENT ID')
       return

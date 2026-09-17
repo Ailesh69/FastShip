@@ -11,17 +11,11 @@ import {
   sampleCurve,
 } from './loadingNav'
 
-// Route transitions with a simulated loading screen.
-//
-// Anything that navigates internally calls `go(path)` instead of routing
-// directly. That shows an overlay over the CURRENT page and only swaps in the
-// destination once the overlay has (at least visually) covered it — so the
-// destination never renders behind the overlay while it's still transparent.
-//
-// Every call picks one of two overlay variants at random, independently of
-// the destination or any other state: the turret/percentage loader (2-3s,
-// unchanged from before) or the fast warp dive (fixed ~550ms). Whichever is
-// picked drives its own wait — the two never share a timer.
+// Route transitions with a simulated loading screen. Internal nav calls
+// `go(path)` instead of routing directly, so the overlay covers the current
+// page before the destination swaps in (never renders behind a transparent
+// overlay). Each call picks turret (2-3s) or warp (~550ms) at random; each
+// variant runs its own timer.
 function LoadingNavProvider({ children }) {
   const navigate = useNavigate()
   const { pathname } = useLocation()
@@ -58,9 +52,8 @@ function LoadingNavProvider({ children }) {
       setPct(0)
 
       if (chosen === 'warp') {
-        // Swap the route at the flash's peak brightness, when full-white
-        // coverage hides the DOM change, then let the overlay's own
-        // self-contained CSS timeline resolve before clearing state.
+        // Swap route at peak flash brightness, when full-white coverage
+        // hides the DOM change; overlay's own CSS timeline finishes after.
         warpSwapId.current = setTimeout(() => navigate(to), WARP_SWAP_MS)
         timeoutId.current = setTimeout(() => {
           setDestination(null)
@@ -77,8 +70,7 @@ function LoadingNavProvider({ children }) {
       const tick = (now) => {
         const t = Math.min(1, (now - startedAt) / duration)
         const next = Math.max(1, Math.round(sampleCurve(curve, t)))
-        // Only commit whole-percent changes; React bails out on an identical
-        // value, which keeps this to ~100 renders instead of one per frame.
+        // Whole-percent only: React bails on identical value, ~100 renders not one/frame.
         setPct((prev) => (prev === next ? prev : next))
 
         if (t < 1) {
@@ -86,7 +78,7 @@ function LoadingNavProvider({ children }) {
           return
         }
 
-        // Hit 100%: swap the page in behind the overlay, then fade it away.
+        // 100%: swap page behind overlay, then fade overlay out.
         navigate(to)
         setFading(true)
         timeoutId.current = setTimeout(() => {

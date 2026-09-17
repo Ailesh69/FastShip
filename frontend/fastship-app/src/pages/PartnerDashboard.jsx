@@ -6,11 +6,9 @@ import { getShipments } from '../api/shipments'
 import { apiError, TRACKING_URL } from '../api/client'
 import s from './PartnerDashboard.module.css'
 
-// DELIVERY PARTNER — assigned shipments.
-//
-// Rows come from GET /partner/shipments, which returns only the shipments this
-// partner was assigned, so there is no "assigned partner" column and no cancel
-// action — cancelling belongs to the seller who created the shipment.
+// DELIVERY PARTNER — assigned shipments, from GET /partner/shipments.
+// No "assigned partner" column (redundant here) and no cancel action —
+// cancelling belongs to the seller who created the shipment.
 
 const COLUMNS = [
   { key: 'id', label: 'SHIPMENT ID', width: '13%' },
@@ -35,9 +33,7 @@ function PartnerDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  // Nothing before the first await touches state: a retry keeps showing the
-  // previous message until the new attempt actually resolves, rather than
-  // blanking the panel and flashing.
+  // no state touched before the first await, so retry doesn't flash-blank the panel
   const load = useCallback(async () => {
     try {
       const data = await getShipments('partner')
@@ -50,8 +46,7 @@ function PartnerDashboard() {
     }
   }, [])
 
-  // Awaited inside the effect rather than called bare, so the state updates
-  // land after the fetch instead of synchronously during the effect body.
+  // await inside effect so state updates land after the fetch, not mid-body
   useEffect(() => {
     ;(async () => {
       await load()

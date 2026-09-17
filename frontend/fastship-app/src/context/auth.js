@@ -1,10 +1,8 @@
 import { createContext, useContext } from 'react'
 
 // Auth context: { user, userType, login, logout }.
-//
-// The session is a real one — `token` is the JWT issued by the role's /token
-// endpoint, and api/client.js reads it back out of this same localStorage key
-// to authorize every request.
+// `token` is the JWT from the role's /token endpoint; api/client.js reads it
+// back from this localStorage key to authorize requests.
 export const STORAGE_KEY = 'fastship.session'
 
 export const AuthContext = createContext(null)
@@ -15,12 +13,9 @@ export function useAuth() {
   return ctx
 }
 
-// Read the session back off localStorage. Returns null when absent or corrupt,
-// so a bad value can never crash the app on boot.
-//
-// A session without a token is treated as absent: that is what a leftover
-// entry from the old mock build looks like, and letting it through would mean
-// a "signed in" navbar over requests the backend rejects with 401.
+// Returns null when absent/corrupt so a bad value can't crash boot. A session
+// without a token is treated as absent too (leftover from the old mock
+// build) — else the navbar would show signed-in while requests 401.
 export function readSession() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -36,8 +31,7 @@ export function writeSession(session) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(session))
   } catch {
-    // Private-mode / quota failures shouldn't break the signed-in flow; the
-    // session still lives in React state for this tab.
+    // Private-mode/quota failure: session still lives in React state for this tab.
   }
 }
 

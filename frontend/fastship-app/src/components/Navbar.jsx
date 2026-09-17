@@ -5,17 +5,13 @@ import { useAuth } from '../context/auth'
 import { ROLES } from '../config/roles'
 import { GUEST_LINKS, TABS_BY_ROLE } from './navTabs'
 
-// Shared top navigation bar, used by every page in both signed-out and
-// signed-in states.
-//
-// The bar CHROME — height (--nav-h), bottom border and background — is defined
-// once here, so the guest bar and the signed-in bar can never drift apart. Only
-// the contents differ, and which set shows is driven by the mock session:
+// Shared top nav bar, signed-out and signed-in states. Chrome (height,
+// border, background) defined once here so the two states can't drift apart:
 //   no session → HOME / LOGIN-SIGNUP / TRACK ORDER, centre-weighted
-//   session    → that role's tabs on the left, account cluster on the right
+//   session    → role's tabs on the left, account cluster on the right
 //
-// Navigation goes through `go()` so every jump plays the loading transition.
-// Links stay real anchors, so middle-click and "open in new tab" still work.
+// Navigates via `go()` for the loading transition; links stay real anchors
+// so middle-click / open-in-new-tab still work.
 
 const NAV_CHROME = 'relative z-20 flex shrink-0 items-center px-8'
 const NAV_STYLE = { height: 'var(--nav-h)', borderBottom: '2px solid rgba(34,211,238,0.55)' }
@@ -28,9 +24,8 @@ function Navbar() {
   const { pathname } = useLocation()
   const { go } = useLoadingNav()
   const { user, userType, logout } = useAuth()
-  // The bar's one chunky button. The text links beside it are left alone —
-  // nudging inline text around is how a nav starts feeling unreliable to aim
-  // at, and they already have their own colour transition.
+  // Only the one chunky button gets the magnet effect — nudging inline text
+  // links makes a nav feel unreliable to aim at.
   const editProfile = useMagnetic({ strength: 4 })
 
   // Let modified clicks (new tab/window) fall through to the browser.

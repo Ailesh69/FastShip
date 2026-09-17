@@ -1,14 +1,10 @@
 import axios from 'axios'
 import { STORAGE_KEY } from '../context/auth'
 
-// The one axios instance every request goes through.
-//
-// The backend runs on its own origin (FastAPI on :8000, Vite on :5173) and its
-// CORS middleware allows exactly http://localhost:5173, so the base URL is
-// absolute rather than a same-origin path.
-// Exported because the backend also serves pages the SPA links out to (the
-// Jinja2 tracking view), and those must follow the same host — hardcoding
-// localhost breaks the moment the app is opened from another device.
+// The one axios instance every request goes through. Backend is a separate
+// origin (FastAPI :8000 vs Vite :5173), so base URL is absolute, not relative.
+// Exported since the SPA also links to backend-rendered pages (tracking view)
+// that must follow the same host.
 export const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
 ).replace(/\/$/, '')
@@ -19,19 +15,16 @@ export const TRACKING_URL = (id) =>
 
 const api = axios.create({ baseURL: API_BASE_URL })
 
-// Attach the bearer token to every outgoing request. Reading it from
-// localStorage on each call (rather than setting a default header at login)
-// means a token written by another tab, or cleared by a logout, takes effect
-// immediately and there is only one place the session is ever stored.
+// Attach bearer token per-request (read fresh from localStorage, not cached
+// at login) so another tab's write/logout takes effect immediately.
 api.interceptors.request.use((config) => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     const session = raw ? JSON.parse(raw) : null
     if (session?.token) config.headers.Authorization = `Bearer ${session.token}`
   } catch {
-    // Unreadable storage (private mode) or a corrupt entry: send the request
-    // unauthenticated and let the backend answer 401, which is the same path
-    // an expired token already takes.
+    // Unreadable/corrupt storage: send unauthenticated, backend answers 401
+    // same as an expired token would.
   }
   return config
 })
@@ -47,13 +40,9 @@ const STATUS_MESSAGES = {
   500: 'SERVER ERROR, PLEASE TRY AGAIN',
 }
 
-// Turn an axios failure into one short line for the pixel UI, which is
-// uppercase throughout.
-//
-// FastShip's own handlers put a plain string in `detail` ("Email is not
-// verified", "No delivery partner available"), and those are far more useful
-// than a status-code fallback — but FastAPI's own 422 puts an ARRAY of field
-// objects there, so only a string is safe to show.
+// Turn an axios failure into one short uppercase line for the pixel UI.
+// FastAPI's own 422 puts an ARRAY in `detail`, not a string — only show
+// `detail` when it's a string, else fall back to the status message.
 export function apiError(err, fallback = 'SOMETHING WENT WRONG') {
   if (!err?.response) return 'CANNOT CONNECT TO SERVER'
   const { status, data } = err.response

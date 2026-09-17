@@ -34,14 +34,8 @@ router = APIRouter(
     },
 )
 async def get_shipment(id: UUID, service: Shipment_ServiceDep, partner: CurrPartnerDep):
-    # Authenticated: the payload carries the recipient's email and phone, the
-    # seller id and the full scan history. Unprotected, anyone holding a
-    # shipment id — which travels in emailed tracking links — could read the
-    # buyer's contact details straight out of the API.
-    #
-    # The public view of a shipment is GET /shipment/track, which renders only
-    # what belongs on a tracking page and is what those emailed links point at.
-    # This JSON route has one caller, the partner's Update Shipment screen.
+    # Authenticated: payload has buyer contact details + seller id. Public tracking
+    # view is GET /shipment/track instead. This route is only for the partner's UI.
     return await service.get(id)
 
 
@@ -51,10 +45,7 @@ async def get_tracking(id: UUID, service: Shipment_ServiceDep):
     if shipment is None:
         raise EntityNotFound("Shipment not found")
     timeline = sorted(shipment.timeline, key=lambda e: e.created_at)
-    # Both sides of this used to be dereferenced unguarded: a shipment with no
-    # events falls back to the column, and that column is nullable, so
-    # `.status.value` on it raised AttributeError and turned the tracking page
-    # into a 500.
+    # status column is nullable; guard against AttributeError when it's None.
     if timeline:
         current_status = timeline[-1].status.value
     else:
@@ -200,9 +191,7 @@ async def submit_review(
 async def add_tag(
     id: UUID, tag: TagName, service: Shipment_ServiceDep, seller: CurrSellerDep
 ):
-    # Seller-only, and only on their own shipments. This was open to the
-    # internet: anyone could retag any shipment, and tags drive handling
-    # instructions (FRAGILE, HEAVY, EXPRESS).
+    # Seller-only, own shipments only — tags drive handling instructions.
     return await service.add_tag(id, tag, seller)
 
 
@@ -226,9 +215,7 @@ async def remove_tag(
     "/all_tags",
     name="Get Shipments by Tag",
     description="Retrieve all **shipments** associated with a specific tag.",
-    # A list of shipments, not one. Declared as a bare ShipmentRead, FastAPI
-    # tried to validate the list against a single object and raised
-    # ResponseValidationError — a 500 on every successful call.
+    # Must be list[ShipmentRead]; a bare ShipmentRead 500s on validation.
     response_model=list[ShipmentRead],
     responses={
         200: {"description": "Shipments retrieved successfully"},

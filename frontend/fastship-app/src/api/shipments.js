@@ -1,13 +1,10 @@
 import api from './client'
 
-// The shipment routes are registered on a router with prefix "/shipment" and
-// paths of "/", so the resource itself is "/shipment/". The trailing slash is
-// deliberate: requesting "/shipment" earns a 307 redirect, and a cross-origin
-// PATCH that has to be re-issued after a redirect is not worth the risk.
+// Trailing slash required — "/shipment" 307-redirects, which a cross-origin
+// PATCH shouldn't have to survive.
 const SHIPMENT = '/shipment/'
 
-// Only sellers and partners have a shipment list — a client's shipments are
-// matched by contact email and have no endpoint of their own.
+// Clients have no shipment-list endpoint — matched by contact email instead.
 export async function getShipments(userType) {
   if (userType !== 'seller' && userType !== 'partner') {
     throw new Error(`No shipment list endpoint for user type: ${userType}`)
@@ -35,8 +32,8 @@ export async function updateShipment(id, payload) {
   return data
 }
 
-// Cancelling is POST /shipment/cancel, not DELETE /shipment — the shipment row
-// survives and simply gains a "cancelled" timeline event.
+// Cancel is POST /shipment/cancel, not DELETE — row survives, just gets a
+// "cancelled" timeline event.
 export async function cancelShipment(id) {
   const { data } = await api.post('/shipment/cancel', null, { params: { id } })
   return data

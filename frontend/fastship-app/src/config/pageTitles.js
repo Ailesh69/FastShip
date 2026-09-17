@@ -1,12 +1,7 @@
-// Per-route document titles.
-//
-// Kept as one map here rather than a useEffect in each page for two reasons:
-// the route table it mirrors also lives in one place (App.jsx), so the two
-// can't quietly drift; and a page that forgets to set a title is a silent bug
-// — here, a missing entry is visible as a gap in the list.
-//
-// App.jsx's Shell applies this on every navigation. index.html carries the
-// same string as its static <title>, which is what shows before React mounts.
+// Per-route document titles, kept as one map (not per-page useEffects) so a
+// missing entry is a visible gap instead of a silent bug.
+// App.jsx's Shell applies this per nav. index.html's static <title> matches
+// HOME_TITLE for the pre-mount flash.
 
 const BRAND = 'FastShip'
 
@@ -37,9 +32,8 @@ const TITLES = {
   '/track': `Track Your Order | ${BRAND}`,
 }
 
-// The legacy paths App.jsx keeps alive as <Navigate> redirects. They resolve to
-// their destination's title so the tab doesn't flash "Page Not Found" during
-// the redirect — brief, but it is the kind of flicker that looks like a bug.
+// Legacy <Navigate> redirects from App.jsx; resolve to destination's title
+// so the tab doesn't flash "Page Not Found" mid-redirect.
 const LEGACY_REDIRECTS = {
   '/dashboard': '/client/dashboard',
   '/profile': '/client/profile',
@@ -57,24 +51,15 @@ export function titleFor(pathname) {
 }
 
 // ---------------------------------------------------------------------------
-// BUILD-TIME SEO
+// BUILD-TIME SEO — read by seoPlugin.js, not imported by any component. Kept
+// here so routes/titles/descriptions can't drift across files.
 //
-// Everything below is read by seoPlugin.js at build time — it is not imported
-// by any component. It lives here so the routes, their titles and their
-// descriptions cannot drift apart across three files.
-//
-// The placeholder host is what index.html ships with. seoPlugin replaces every
-// occurrence with VITE_SITE_URL when that is set, so the real domain is
-// configured in exactly one place instead of being hand-edited in the canonical
-// tag, robots.txt and sitemap.xml separately.
+// Placeholder host from index.html; seoPlugin swaps in VITE_SITE_URL when set
+// (one place to configure the domain instead of 3).
 export const PLACEHOLDER_ORIGIN = 'https://YOUR-EVENTUAL-DOMAIN.com'
 
-// The routes a crawler should see. Signed-in areas are deliberately absent —
-// they are also Disallow-ed in the generated robots.txt.
-//
-// `description` becomes that page's <meta name="description"> and
-// og:description in its own prerendered HTML file, which is what makes a link
-// to /track preview as the tracking page rather than as the homepage.
+// Crawlable routes — signed-in areas excluded (also Disallow-ed in robots.txt).
+// `description` becomes <meta name="description">/og:description per page.
 export const PUBLIC_ROUTES = [
   {
     path: '/',
@@ -118,10 +103,8 @@ export const PUBLIC_ROUTES = [
     description:
       'Create a FastShip delivery partner account to take on assigned shipments and post status updates.',
   },
-  // /track is deliberately NOT listed. It is reached from the seller nav now,
-  // not from the public bar, so it is not something to advertise to crawlers.
-  // The route itself stays open — old links, bookmarks and the shipment ids in
-  // confirmation emails all still resolve — it simply is not promoted.
+  // /track intentionally not listed (reached via seller nav, not promoted to
+  // crawlers) — route stays open for old links/bookmarks though.
 ]
 
 // Signed-in routes, listed once so robots.txt can Disallow them.

@@ -3,20 +3,14 @@ import { useLoadingNav } from '../context/loadingNav'
 import ZipChipInput from '../components/ZipChipInput'
 import { getProfile } from '../api/auth'
 import { apiError } from '../api/client'
-// Same visual language as the client Profile Editor — imported rather than
-// duplicated, so the two editors can't drift apart. Partner-only extras
-// (badges, chip row) live in the local module below.
+// reuses client Profile Editor's styles so the two can't drift; partner-only
+// extras (badges, chip row) are in the local module below
 import p from './ProfileEditor.module.css'
 import s from './PartnerProfile.module.css'
 
-// DELIVERY PARTNER — profile editor.
-//
-// Fields come from GET /partner/me — { id, name, email, zipcode,
-// max_handling_capacity, serviceable_zip_codes, email_verified }.
-//
-// Saving is still local. A partner-update endpoint does exist (POST /partner/)
-// but its DPUpdate schema has no `name` field, so wiring this form to it would
-// quietly discard a name change; the confirmation line says so instead.
+// DELIVERY PARTNER — profile editor. Fields from GET /partner/me.
+// Saving stays local: POST /partner/ exists but its DPUpdate schema has no
+// `name` field, so wiring it up would silently drop name changes.
 
 // The API stores no avatar, so every partner starts from the same sprite.
 const DEFAULT_AVATAR =
@@ -30,9 +24,7 @@ const SECURITY = [
 
 const TEXT_ARC = 'M 26.6 148.9 A 92 92 0 1 1 193.4 148.9'
 
-// Outer shell: fetches /partner/me and only mounts the editor once the record
-// exists, so the form's initial state can be seeded straight from it instead of
-// being re-synced by an effect.
+// fetches /partner/me, mounts editor only once loaded so initial state seeds straight from it
 function PartnerProfile() {
   const [partner, setPartner] = useState(null)
   const [error, setError] = useState('')
@@ -115,8 +107,7 @@ function PartnerProfileForm({ partner }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    // UI-only build — nothing is sent anywhere.
-    // Local only — see the note at the top of this file on DPUpdate.
+    // UI-only, nothing sent — see DPUpdate note up top
     setSaved(true)
   }
 
@@ -164,10 +155,7 @@ function PartnerProfileForm({ partner }) {
             <span className={`${s.badge} ${partner.email_verified ? s.badgeOk : s.badgeNo}`}>
               EMAIL VERIFIED: {partner.email_verified ? '✓' : '✗'}
             </span>
-            {/* Capacity replaces the seller card's MEMBER SINCE: DPRead has no
-                join date to show (the column is spelled created_At and is not
-                part of the schema), and remaining capacity is the number a
-                partner actually acts on. */}
+            {/* capacity replaces MEMBER SINCE: DPRead has no join date in schema */}
             <span className={`${s.badge} ${s.badgeInfo}`}>
               CAPACITY: {partner.max_handling_capacity ?? '?'}
             </span>

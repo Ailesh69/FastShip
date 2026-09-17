@@ -1,18 +1,13 @@
-// Shared 8-bit sprite renderer.
+// Shared 8-bit sprite renderer. Sprite = array of equal-length strings (one
+// char per pixel) + `palette` mapping char -> color ('.' = transparent).
+// Renders as crisp <svg> of 1x1 rects — no image files, no anti-aliasing.
 //
-// A sprite is an array of equal-length strings — one character per pixel — plus
-// a `palette` mapping each character to a color ('.' means transparent.)
-// <PixelArt> turns that grid into a crisp <svg> of 1x1 rects, so there are no
-// image files to ship and no anti-aliasing anywhere.
-//
-// `outline` draws a hard 1px offset copy underneath (the dark edge that makes
-// 8-bit sprites pop) — it is a filter, so it follows the sprite silhouette.
+// `outline`: hard 1px offset copy underneath, via filter so it follows silhouette.
 function PixelArt({ rows, palette, scale = 3, outline, className = '', style }) {
   const w = rows[0].length
   const h = rows.length
 
-  // Merge horizontally-adjacent pixels of the same color into one rect. Keeps
-  // the DOM small for the bigger sprites without changing a single pixel.
+  // Merge adjacent same-color pixels into one rect — keeps DOM small.
   const rects = []
   rows.forEach((row, y) => {
     let x = 0

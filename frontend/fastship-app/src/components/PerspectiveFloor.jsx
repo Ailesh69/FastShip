@@ -1,42 +1,26 @@
-// The perspective floor below the horizon, drawn as computed geometry rather
-// than a CSS 3D transform so the convergence matches the reference exactly.
+// Perspective floor below the horizon — computed geometry, not a CSS 3D
+// transform, so convergence matches the reference exactly. Units: nominal
+// 1372x880, measured off the reference art.
+//   * vanishing point sits ABOVE the horizon at horizonY - VP_RISE (so lines
+//     have real spacing at the floor's start, not a pinch point)
+//   * verticals radiate from the VP, evenly spaced at horizon
+//   * horizontals follow a harmonic progression (1/distance-from-VP falls by
+//     a constant step) so they bunch at the horizon, open toward the viewer
 //
-// Geometry (all measured off the reference art, in nominal 1372x880 units):
-//   * the vanishing point sits ABOVE the horizon, at horizonY - VP_RISE — which
-//     is why the lines already have real spacing where the floor starts instead
-//     of pinching to a point;
-//   * vertical lines radiate from the VP, evenly spaced at the horizon and
-//     spreading toward the bottom edges;
-//   * horizontal lines follow a perspective (harmonic) progression: the
-//     reciprocal of their distance from the VP falls by a constant step, which
-//     is what makes them bunch up at the horizon and open out toward the viewer.
-//
-// `horizonY` is the only thing pages vary. Because the vanishing point is
-// derived from it, moving the horizon TRANSLATES the identical floor up or down
-// rather than reshaping it — the sign-up page has more content above it, so its
-// horizon sits lower, but the perspective reads exactly the same as the hero's.
-//
-// Nothing is emitted above horizonY, so the floor can never fan upward into
-// the pyramid shape the old two-plane version produced.
+// `horizonY` is the only per-page variable; VP derives from it, so moving
+// the horizon translates the floor rather than reshaping it. Nothing is
+// emitted above horizonY — floor can't fan upward into a pyramid shape.
 
 const W = 1372
 const H = 880
 const CX = W / 2
 
-// Horizontal overscan, in viewBox units, for the depth lines only.
-//
-// The floor plane is a `.par` parallax layer (GridBackground), so it slides a
-// few px sideways with the pointer. The depth lines are the one thing here
-// that spans edge to edge, so without this they would slide inboard and leave
-// a bare strip down one side of the viewport.
-//
-// It is drawn OUTSIDE the viewBox — with `overflow: visible` on the <svg>, so
-// the viewBox mapping is untouched and every line stays exactly where the
-// measured geometry puts it. Widening the element instead would have stretched
-// the whole floor horizontally (preserveAspectRatio="none"), which moves every
-// vertical and changes the convergence the art was matched against.
-// The parent .floor-fade is inset-0 and carries the mask, so the overspill is
-// clipped at the viewport edge where it should be.
+// Overscan (viewBox units) for depth lines only. The floor is a `.par`
+// parallax layer that slides sideways with the pointer; without this pad
+// the edge-to-edge depth lines would slide inboard and expose a bare strip.
+// Drawn OUTSIDE the viewBox with `overflow: visible` so line geometry stays
+// exact (widening the element would stretch/reshape convergence instead).
+// Parent .floor-fade's mask clips the overspill at the viewport edge.
 const EDGE_PAD = 60
 const VP_RISE = 376 // vanishing point clearance above the horizon
 const SPACING_AT_HORIZON = 88.6 // gap between adjacent verticals on the horizon
@@ -51,11 +35,9 @@ const LINE_COUNT = Math.ceil(CX / SPACING_AT_HORIZON) + 1
 function PerspectiveFloor({ horizonY = 405 }) {
   const vpY = horizonY - VP_RISE
 
-  // Screen rotation (deg) of rail k, measured from straight-down. Every rail
-  // passes through the vanishing point, so rail k -> rail k+1 is purely a
-  // rotation ABOUT that point. Sweeping each rail by its own delta therefore
-  // slides the rails sideways while keeping them converged on the VP — a plain
-  // translateX would shear them off it.
+  // Rail k's rotation (deg) from straight-down, about the VP. Rail k->k+1 is
+  // a pure rotation, so sweeping by delta keeps rails converged (a plain
+  // translateX would shear them off the VP).
   const railAngle = (k) => -Math.atan(k * SLOPE) * (180 / Math.PI)
 
   const verticals = []
@@ -68,23 +50,16 @@ function PerspectiveFloor({ horizonY = 405 }) {
     })
   }
 
-  // y = vpY + 1 / (u0 - i * DEPTH_STEP), walking toward the viewer until we
-  // fall off the bottom of the page.
-  //
-  // Each line also carries `dy`: the distance to the NEXT line's slot. Animating
-  // every line by its own dy over one shared duration advances the whole field
-  // by exactly one depth step per cycle, so at the loop point the on-screen set
-  // of positions is identical to the start — seamless, no jump. dy grows toward
-  // the viewer, which is what gives the flow its perspective acceleration.
+  // y = vpY + 1 / (u0 - i * DEPTH_STEP), walking toward viewer until off-page.
+  // `dy` = distance to next line's slot; animating each line by its own dy
+  // over one shared duration advances the field by one depth step per
+  // cycle, so the loop is seamless. dy grows toward viewer = perspective accel.
   const ys = []
   for (let i = 0, u = 1 / VP_RISE; i < 48; i++, u -= DEPTH_STEP) {
     if (u <= 0) break
     const y = vpY + 1 / u
     ys.push(y)
-    // One past the bottom edge: that line's slot is where the last visible
-    // line travels to, and it leaves the screen as a new one is born at the
-    // horizon (hidden by the mask's fade-in).
-    if (y > H) break
+    if (y > H) break // one past bottom edge: last visible line's exit slot
   }
   const horizontals = ys
     .slice(0, -1)
@@ -106,9 +81,8 @@ function PerspectiveFloor({ horizonY = 405 }) {
         vectorEffect="non-scaling-stroke"
         shapeRendering="crispEdges"
       >
-        {/* Rails sweep sideways by rotating about the vanishing point, so they
-            visibly move yet stay converged. Same --grid-cycle as the depth
-            lines, so the whole net advances on one clock. */}
+        {/* Rails rotate about the VP so they move but stay converged.
+            Same --grid-cycle as depth lines — one clock. */}
         {verticals.map((v, i) => (
           <line
             key={`v${i}`}

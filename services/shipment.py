@@ -46,10 +46,7 @@ class ShipmentService(BaseService):
         new_shipment = Shipment(
             **shipment_create.model_dump(),
             status=ShipmentStatus.placed,
-            # estimated_delivery is a TIMESTAMP WITH TIME ZONE. datetime.now()
-            # with no tz produced a naive value that Postgres read as UTC, so a
-            # seller west of Greenwich saw an ETA hours adrift from the one they
-            # were promised.
+            # Must be tz-aware; a naive datetime gets misread as UTC by Postgres.
             estimated_delivery=datetime.now(tz=timezone.utc) + timedelta(days=3),
             seller_id=seller.id,
         )
@@ -72,14 +69,9 @@ class ShipmentService(BaseService):
         if shipment.delivery_partner_id != partner.id:
             raise ClientNotAuthorized()
         if shipment_update.status == ShipmentStatus.delivered:
-            # Read the code stored when the shipment went out for delivery —
-            # add_otp() writes one and takes two arguments, so calling it here
-            # both raised a TypeError and would have overwritten the code.
             code = await verify_otp(shipment.id)
-            # No stored code means the shipment never went out for delivery (or
-            # the code expired); there is nothing to check against, so this can
-            # only be refused. Comparing directly would have let a caller match
-            # a missing code by sending its stringified form.
+            # No stored code (never dispatched, or expired) - refuse rather than
+            # let a caller match it by literally sending "None".
             if code is None:
                 raise ClientNotAuthorized(
                     "No verification code is active for this shipment"
@@ -88,9 +80,7 @@ class ShipmentService(BaseService):
                 raise ClientNotAuthorized("Verification code is incorrect")
             # One code, one delivery.
             await clear_otp(shipment.id)
-        # estimated_delivery lives on the shipment row, not on a timeline event,
-        # so it is applied separately and kept out of the event kwargs —
-        # ShipmentEventService.add() has no such parameter and would raise.
+        # estimated_delivery lives on the shipment row, not the event; applied separately.
         if shipment_update.estimated_delivery:
             shipment.estimated_delivery = shipment_update.estimated_delivery
 
@@ -110,9 +100,7 @@ class ShipmentService(BaseService):
     async def rate(self, token: str, rating: int, comment: str | None = None):
         token_data = self.validate_review_token(token)
         shipment = await self.get(UUID(token_data["id"]))
-        # One review per shipment. The link is reusable for as long as it is
-        # valid, so without this a recipient could post an unlimited number of
-        # ratings for the same delivery.
+        # One review per shipment; the link stays valid and reusable otherwise.
         if shipment.review is not None:
             raise BadRequest("This shipment has already been reviewed")
         new_review = Review(
@@ -140,23 +128,15 @@ class ShipmentService(BaseService):
         await self._delete(await self.get(id))
 
     async def _get_tag(self, tag_name: TagName) -> "Tag":
-        """The Tag row for this name, or a 404 rather than a None nobody checks.
-
-        Callers used to append/remove the result directly. When the tag table
-        had no matching row the append quietly put a None into the collection
-        and the flush blew up with an unrelated error.
-        """
+        """Tag row for this name, or 404 instead of a None nobody checks."""
         tag = await tag_name.tag(self.session)
         if tag is None:
             raise EntityNotFound(f"Tag {tag_name.value} does not exist")
         return tag
 
     async def _get_owned(self, id: UUID, seller: "Seller") -> Shipment:
-        """A shipment the given seller actually owns.
-
-        Not-found rather than not-authorized on purpose: it keeps the endpoint
-        from confirming that some other seller's shipment id exists.
-        """
+        """Shipment owned by this seller. 404s (not 401) to avoid confirming
+        other sellers' shipment ids exist."""
         shipment = await self.get(id)
         if shipment.seller_id != seller.id:
             raise EntityNotFound("ID NOT FOUND")

@@ -5,17 +5,12 @@ import { getProfile } from '../api/auth'
 import s from './ProfileEditor.module.css'
 
 // USER PROFILE EDITOR (general / customer account).
-//
-// All new styling lives in ProfileEditor.module.css — a CSS Module, so its
-// class names are hashed and cannot affect any other page. The only global
-// classes used here are read-only ones already shared site-wide
-// (title-glow-clean, cut-corners). No global stylesheet is modified.
-//
-// UI only: field state is local and Save just logs — no API calls.
+// Styling is scoped to ProfileEditor.module.css (CSS Module); only shared
+// globals used are title-glow-clean and cut-corners. No global CSS touched.
+// UI only: field state is local, Save doesn't call the API.
 
-// Matched to the /client/me schema — { name, email, email_verified,
-// created_at }. No phone and no address: those fields don't exist on the
-// endpoint, so the form must not offer them.
+// matches /client/me schema — { name, email, email_verified, created_at }.
+// no phone/address: those don't exist on the endpoint
 const PERSONAL = [
   { name: 'fullName', label: 'FULL NAME:', type: 'text', autoComplete: 'name' },
   { name: 'email', label: 'EMAIL ADDRESS:', type: 'email', autoComplete: 'email' },
@@ -35,8 +30,7 @@ const INITIAL = {
   confirmPassword: '',
 }
 
-// Arc for the curved "UPDATE PROFILE PHOTO" label: a 92px-radius sweep from
-// lower-left, up over the top, to lower-right (230°, hence large-arc = 1).
+// arc for "UPDATE PROFILE PHOTO" label: 92px radius, 230° sweep (large-arc = 1)
 const DEFAULT_AVATAR =
   "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%237c5cc4'/%3E%3Crect x='3' y='5' width='10' height='7' fill='%23f3cfa2'/%3E%3Crect x='2' y='12' width='12' height='4' fill='%2322b8e0'/%3E%3C/svg%3E"
 
@@ -44,8 +38,7 @@ const TEXT_ARC = 'M 26.6 148.9 A 92 92 0 1 1 193.4 148.9'
 
 function ProfileEditor() {
   const { go } = useLoadingNav()
-  // The session seeds the fields so the form is never blank on first paint;
-  // GET /client/me then replaces them with the stored record.
+  // session seeds fields so form isn't blank on first paint; GET /client/me replaces them
   const { user } = useAuth()
   const [values, setValues] = useState(() => ({
     ...INITIAL,
@@ -56,7 +49,7 @@ function ProfileEditor() {
   const fileRef = useRef(null)
   const objectUrl = useRef(null)
 
-  // Revoke the last preview URL so picking several photos doesn't leak blobs.
+  // revoke last preview URL, avoids leaking blobs across multiple picks
   useEffect(
     () => () => {
       if (objectUrl.current) URL.revokeObjectURL(objectUrl.current)
@@ -64,8 +57,7 @@ function ProfileEditor() {
     [],
   )
 
-  // Only the two schema fields are overwritten — the password boxes are local
-  // and must survive the profile landing mid-edit.
+  // only overwrite the two schema fields — password boxes stay local, must survive mid-edit
   useEffect(() => {
     let cancelled = false
     ;(async () => {
@@ -75,8 +67,7 @@ function ProfileEditor() {
           setValues((v) => ({ ...v, fullName: profile.name, email: profile.email }))
         }
       } catch {
-        // Leave the session-seeded values in place; the navbar already shows
-        // the same name and there is nothing useful to say here.
+        // keep session-seeded values; navbar already shows the name, nothing else to say
       }
     })()
     return () => {
@@ -96,7 +87,7 @@ function ProfileEditor() {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    // Local only: the client router exposes no profile-update endpoint.
+    // local only: client router has no profile-update endpoint
   }
 
   return (

@@ -2,14 +2,11 @@ import { useRef, useState } from 'react'
 import s from './ZipChipInput.module.css'
 
 // Multi-value zip-code entry: each committed value becomes a removable chip.
+// Not used by partner SIGNUP (needs fixed row height) — that's a plain
+// comma input instead. This is for variable-height spots like profile edit.
 //
-// NOTE: the delivery-partner SIGNUP form does not use this — its "Serviceable
-// Zip Codes" field is a plain comma-separated input, because every row on that
-// form has to stay the same fixed height. This component is for places where a
-// variable-height field is fine (the partner profile editor).
-//
-// Commit on Enter, comma, or blur. Backspace on an empty box removes the last
-// chip. Duplicates are ignored.
+// Commit on Enter/comma/blur. Backspace on empty box removes last chip.
+// Duplicates ignored.
 function ZipChipInput({ value, onChange, placeholder = 'ADD ZIP + ENTER', id }) {
   const [draft, setDraft] = useState('')
   const boxRef = useRef(null)

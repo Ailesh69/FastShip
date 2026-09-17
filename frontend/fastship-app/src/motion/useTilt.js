@@ -2,28 +2,18 @@ import { useCallback, useEffect, useRef } from 'react'
 import { canHover } from './depthEngine'
 import { motionIntensity } from './motionPolicy'
 
-// 3D tilt toward the cursor, for cards.
-//
-// Returns a CALLBACK ref you put on the card ITSELF — there is no wrapper
-// element and no layout change:
+// 3D tilt toward the cursor, for cards. Returns a CALLBACK ref for the card
+// itself (no wrapper, no layout change):
 //
 //   const tilt = useTilt()
 //   <div ref={tilt} className="path-card tilt ...">
 //
-// The `tilt` class (motion.css) owns the transform; this hook only writes
-// --tilt-x / --tilt-y / --tilt-z. At rest all three are zero, so an untouched
-// card sits exactly where it always did.
+// `.tilt` (motion.css) owns the transform; hook only writes --tilt-x/y/z,
+// zero at rest. `.tilt` can't share an element with `.par`/`.mag`/<Reveal> —
+// nest them instead.
 //
-// NOTE the transform-ownership rule in motion.css: `.tilt` cannot share an
-// element with `.par`, `.mag` or a <Reveal>. Nest them instead.
-//
-// A callback ref (not a plain one) so cards that mount later — dashboard
-// panels waiting on a fetch, for instance — still get wired up. See the same
-// note in useMagnetic.js.
-//
-// Cost: listeners on the card only — nothing global — and at most one
-// getBoundingClientRect + one style write per frame, for the single card the
-// cursor is actually over.
+// Callback ref so cards mounting later (fetch-gated dashboard panels) still
+// get wired. Listeners are per-card only, nothing global.
 
 /**
  * @param max   peak rotation in degrees at the card's corner
@@ -32,10 +22,8 @@ import { motionIntensity } from './motionPolicy'
 export default function useTilt({ max = 7, lift = 14 } = {}) {
   const detach = useRef(null)
 
-  // `max`/`lift` are dependencies rather than a mutable ref: every call site
-  // passes constants, so this callback is created once, and on the rare change
-  // React rebinds the listeners with the new numbers — which is the correct
-  // behaviour anyway.
+  // Deps not a ref: call sites pass constants, so this is stable in practice;
+  // on the rare change React just rebinds with new numbers, which is fine.
   const ref = useCallback(
     (el) => {
       if (detach.current) {
@@ -54,10 +42,8 @@ export default function useTilt({ max = 7, lift = 14 } = {}) {
 
       const apply = () => {
         raf = 0
-        // Read per frame rather than caching on enter: the page can scroll
-        // under a hovered card (the dashboards are long), and a stale rect
-        // would make the tilt drift away from the cursor. One layout read per
-        // frame, for the one card being pointed at.
+        // Read rect per frame, not cached on enter — page can scroll under a
+        // hovered card, stale rect would drift the tilt off the cursor.
         const rect = el.getBoundingClientRect()
         if (!rect.width || !rect.height) return
 
@@ -65,8 +51,7 @@ export default function useTilt({ max = 7, lift = 14 } = {}) {
         const nx = (px - rect.left) / rect.width - 0.5
         const ny = (py - rect.top) / rect.height - 0.5
 
-        // Pointer toward an edge tips that edge away from the viewer, which is
-        // how a real panel pivoting under a fingertip behaves.
+        // Pointer toward an edge tips that edge away from the viewer.
         el.style.setProperty('--tilt-y', `${(nx * maxDeg * 2).toFixed(2)}deg`)
         el.style.setProperty('--tilt-x', `${(-ny * maxDeg * 2).toFixed(2)}deg`)
       }
@@ -88,8 +73,7 @@ export default function useTilt({ max = 7, lift = 14 } = {}) {
           cancelAnimationFrame(raf)
           raf = 0
         }
-        // Drop the fast tracking transition first, so the slow curve in
-        // motion.css is what eases the card back down to flat.
+        // Drop tracking mode first so motion.css's slow curve eases it flat.
         delete el.dataset.tilting
         el.style.setProperty('--tilt-x', '0deg')
         el.style.setProperty('--tilt-y', '0deg')

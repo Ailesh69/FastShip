@@ -17,11 +17,7 @@ async def create_db_tables():
     await seed_tags()
 
 
-# One row per TagName. Nothing ever inserted these, so the tag table was always
-# empty and TagName.tag() always returned None — which made every tag endpoint
-# (add, remove, list-by-tag) fail on a None the callers never checked for. The
-# tag vocabulary is a fixed enum, so the rows belong to the schema, not to data
-# entry.
+# Fixed tag vocabulary, seeded here since nothing else inserts these rows.
 _TAG_INSTRUCTIONS = {
     "EXPRESS": "Prioritise this shipment; deliver ahead of standard traffic.",
     "STANDARD": "Normal handling and routing.",

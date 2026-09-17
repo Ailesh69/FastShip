@@ -2,17 +2,6 @@ import Reveal from '../motion/Reveal'
 import useMagnetic from '../motion/useMagnetic'
 import { useLoadingNav } from '../context/loadingNav'
 
-// ABOUT ME — the destination for the navbar's ABOUT ME link.
-//
-// ⚠️ ONE LINE STILL NEEDS YOU: the opening sentence below is written from what
-// the repo can actually prove (that this is a learning project, and the stack
-// it uses). Your name, where you are, what you are aiming at next — none of
-// that is anywhere in the codebase, so it is deliberately NOT invented here.
-// Replace INTRO with a sentence or two in your own words.
-//
-// Everything else is evidenced: the stack lists come from requirements.txt and
-// package.json, and the GitHub link from `git remote -v`.
-//
 // Styling reuses existing site vocabulary only — `signup-card` for the panel,
 // `title-glow-clean` / `teal-glow` for headings, VT323 for body copy, and
 // `bracket-btn` for the outbound link. No new colours or components.

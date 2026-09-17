@@ -1,15 +1,10 @@
 import PixelArt from './PixelArt'
 import { SPARKLE, SPARKLE_PALETTE, SPARKLE_TEAL_PALETTE } from './pixelSpriteAssets'
 
-// Scattered 8-bit background sprites. Every position is a percentage taken off
-// the reference art, so the whole field scales with the viewport instead of
-// drifting away from the grid at other window sizes.
-//
-// Each sprite carries its own ambient animation (see the anim-* classes in
-// index.css) with a hand-picked delay, so nothing sits frozen and nothing moves
-// in lockstep with its neighbours. The grid lines themselves stay static.
-//
-// This layer is purely decorative: pointer-events-none, aria-hidden.
+// Scattered 8-bit background sprites. Positions are percentages off the
+// reference art, so the field scales with the viewport. Each sprite has its
+// own animation + hand-picked delay (anim-* classes, index.css) so nothing
+// sits frozen or moves in lockstep. Purely decorative: pointer-events-none.
 
 /* ============================ SPRITE GRIDS ============================ */
 
@@ -84,15 +79,11 @@ const GEAR = [
 ]
 const GEAR_PALETTE = { G: '#fbbf24' }
 
-// Four-point sparkle / diamond, shared by both ambient sparkles in the scene
-// and (via pixelSpriteAssets.js) the warp transition's particle burst.
+// Four-point sparkle, shared with pixelSpriteAssets.js's warp particle burst.
 
 /* ============================ LAYOUTS ============================
-
-   Only POSITIONS change between pages. Every sprite grid, colour, animation
-   and stagger delay below is shared, so the two pages can never drift in
-   behaviour — the sign-up page simply pushes the field out into the side
-   margins, where its three tall cards leave room. */
+   Only POSITIONS differ between pages; sprite/color/animation/delay is
+   shared. Sign-up page pushes the field into the side margins for its cards. */
 
 const LAYOUTS = {
   hero: {
@@ -131,8 +122,7 @@ const LAYOUTS = {
     ],
   },
 
-  // Sign-up page: the three path cards occupy roughly 14%–85% of the width,
-  // so everything lives outside that band.
+  // Sign-up: path cards occupy ~14%-85% width, so sprites live outside that band.
   select: {
     arrow: [6.5, 14],
     brownRule: [4.5, 20.5],
@@ -172,29 +162,22 @@ const LAYOUTS = {
 
 /* ============================ PRIMITIVES ============================ */
 
-// Sprite-field parallax, in px of travel at full pointer deflection for a
-// sprite at depth 1. Negative: the field slides away from the cursor, same
-// camera-pan direction as the grid planes behind it (see motion.css).
-//
-// These are larger than the floor's amplitude on purpose — the sprites are the
-// NEAR plane. The gap between the two is what gives the background its
-// dimension: pan the cursor and the sparkles visibly overtake the grid.
+// Parallax travel (px) at full pointer deflection, depth 1. Negative: slides
+// away from cursor, same convention as the grid planes (motion.css).
+// Larger than the floor's amplitude on purpose — sprites are the NEAR plane,
+// so panning makes them visibly overtake the grid, giving it depth.
 const SPRITE_X = -24
 const SPRITE_Y = -13
 
-// Absolutely-positioned wrapper. `at` is an [left%, top%] pair pulled from the
-// active layout; `anim` is an anim-* class from index.css and `delay` staggers
-// it against its neighbours.
+// Absolutely-positioned wrapper. `at` = [left%, top%]; `anim` = anim-* class
+// (index.css); `delay` staggers against neighbours.
 //
-// `depth` places the sprite in the field's Z order: ~0.3 for the far texture
-// specks, ~1.3 for the big foreground sparkle. It only scales how far the
-// sprite travels against the pointer; its resting position is still exactly
-// the [left%, top%] measured off the reference art.
+// `depth` sets Z order (~0.3 far specks .. ~1.3 foreground sparkle) — only
+// scales pointer travel, resting position stays the measured [left%, top%].
 //
-// The parallax lives on the OUTER element and the ambient animation on an
-// inner one. Both are transforms, and the anim-* keyframes in index.css set
-// `transform` outright — on a single element the animation would win every
-// frame and the parallax would never be applied at all.
+// Parallax on the OUTER element, animation on an inner one: both are
+// transforms, and anim-* keyframes set `transform` outright, so on one
+// element the animation would always win and parallax would never apply.
 function At({ at, anim = '', delay = 0, depth = 0, children }) {
   const [l, t] = at
   return (
@@ -241,13 +224,10 @@ function PixelSprites({ layout = 'hero' }) {
   const at = LAYOUTS[layout] ?? LAYOUTS.hero
 
   return (
-    // The field as a whole lags the page slightly on scroll (`--par-s`), so on
-    // the pages long enough to scroll it separates from the content in front
-    // of it. Small: 5px of drift per 100px scrolled. Individual sprites add
-    // their own pointer parallax on top, via `depth` on <At>.
-    // `sprite-field` is a hook with no styles of its own — the intro uses it to
-    // drop this layer out of the frame while it covers the screen (see
-    // .fsi-playing in fastship-intro.css).
+    // Field lags the page on scroll (`--par-s`, 5px/100px) so it separates
+    // from content on long pages. Sprites add their own pointer parallax on
+    // top via `depth`. `sprite-field` is a styleless hook — intro uses it to
+    // drop this layer out of frame while covering the screen (.fsi-playing).
     <div
       className="sprite-field par pointer-events-none absolute inset-0 z-0 overflow-hidden"
       style={{ '--par-s': 0.05 }}
@@ -384,16 +364,10 @@ function PixelSprites({ layout = 'hero' }) {
       </At>
 
       {/* ---------------- TEXTURE DOTS ----------------
-          Single pixels at low opacity, sprinkled across both halves. Delay and
-          duration are derived from the index so no two twinkle together.
-
-          These take the parallax on the SAME element as their animation —
-          unlike the sprites above, which need the extra wrapper. `twinkle`
-          animates opacity only, so there is no transform for it to clobber.
-
-          Depth is derived from the index too (0.28-0.58), which scatters them
-          through the near/far range instead of moving the whole speckle field
-          as one flat sheet. */}
+          Delay/duration derived from index so no two twinkle together.
+          Parallax + animation on the SAME element here (twinkle only
+          animates opacity, no transform to clobber). Depth also from index
+          (0.28-0.58) to scatter near/far instead of one flat sheet. */}
       {at.dots.map(([l, t, color], i) => {
         const depth = 0.28 + (i % 4) * 0.1
         return (

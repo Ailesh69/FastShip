@@ -1,15 +1,7 @@
-"""The one place a templated email is queued.
+"""Single entry point for queuing templated emails.
 
-Every email template pulls the pixel typefaces off this server with @font-face,
-and an email is read outside any browsing context — so those URLs have to be
-absolute and reachable from the recipient's device. `asset_base` is resolved
-HERE, in the web process, while the request that triggered the mail is still in
-scope (see core.request_context). Resolving it inside the Celery worker would be
-too late: the worker has no request, so it would fall back to APP_BASE_URL and
-mail out font links to localhost.
-
-Going through this function rather than calling send_email_with_template.delay()
-directly is what guarantees no caller can forget to include it.
+Resolves asset_base here (web process, request still in scope) since the Celery
+worker has no request and would fall back to APP_BASE_URL / localhost.
 """
 
 from config import app_settings

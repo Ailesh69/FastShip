@@ -12,11 +12,8 @@ import { apiError, TRACKING_URL } from '../api/client'
 import { useLoadingNav } from '../context/loadingNav'
 import s from './SellerDashboard.module.css'
 
-// SELLER DASHBOARD — order summary table.
-//
-// Rows come from GET /seller/shipments, which returns every shipment this
-// seller created. Layout, columns and styling are unchanged from the reference
-// screenshot; only the data behind them is real.
+// SELLER DASHBOARD — order summary table. Rows from GET /seller/shipments
+// (every shipment this seller created). Layout matches the reference; only the data is real.
 
 const COLUMNS = [
   { key: 'id', label: 'SHIPMENT ID', width: '14%' },
@@ -28,8 +25,7 @@ const COLUMNS = [
   { key: 'actions', label: 'ACTIONS', width: '14.5%' },
 ]
 
-// A shipment that has already arrived or been called off has nothing left to
-// cancel, and the backend would just stack a second cancelled event on it.
+// delivered/cancelled shipments can't be cancelled again (backend would just stack a duplicate event)
 const canCancel = (status) => status !== 'delivered' && status !== 'cancelled'
 
 function SellerDashboard() {
@@ -40,9 +36,7 @@ function SellerDashboard() {
   const [openId, setOpenId] = useState(null) // row whose timeline is expanded
   const [cancelling, setCancelling] = useState(null)
 
-  // Nothing before the first await touches state: a retry keeps showing the
-  // previous message until the new attempt actually resolves, rather than
-  // blanking the panel and flashing.
+  // no state touched before the first await, so retry doesn't flash-blank the panel
   const load = useCallback(async () => {
     try {
       const data = await getShipments('seller')
@@ -55,8 +49,7 @@ function SellerDashboard() {
     }
   }, [])
 
-  // Awaited inside the effect rather than called bare, so the state updates
-  // land after the fetch instead of synchronously during the effect body.
+  // await inside effect so state updates land after the fetch, not mid-body
   useEffect(() => {
     ;(async () => {
       await load()
@@ -67,8 +60,7 @@ function SellerDashboard() {
     setCancelling(id)
     try {
       await cancelShipment(id)
-      // Refetch rather than patching state: cancelling appends a timeline
-      // event server-side, and the row's status is read back off that.
+      // refetch, not patch: cancel appends a timeline event server-side, status reads back off that
       await load()
     } catch (err) {
       setError(apiError(err, 'COULD NOT CANCEL SHIPMENT'))
@@ -80,8 +72,7 @@ function SellerDashboard() {
   // Leaves the SPA: the tracking view is a Jinja2 page served by FastAPI.
   const track = (id) => window.location.assign(TRACKING_URL(id))
 
-  // Counts for the caption — derived, never stored, so they can't fall out of
-  // step with the rows underneath.
+  // derived, not stored, so counts can't drift from the rows
   const counts = shipments.reduce((acc, sh) => {
     const status = latestStatus(sh)
     acc[status] = (acc[status] ?? 0) + 1
@@ -97,13 +88,10 @@ function SellerDashboard() {
 
   return (
     <section className="relative z-10 w-full px-4 pb-10">
-      {/* Page heading. Same treatment as the partner dashboard's "ASSIGNED
-          SHIPMENTS" so the two read as siblings — this page was the only one
-          on the site with no <h1> at all. */}
+      {/* same heading treatment as partner dashboard's ASSIGNED SHIPMENTS */}
       <h1 className="title-glow-clean m-0 text-center text-[22px] leading-none">SELLER DASHBOARD</h1>
 
-      {/* Top-left submit button. `mt-[26px]` is the same gap the panel below
-          uses, so the new heading above doesn't crowd it. */}
+      {/* mt-[26px] matches the panel's gap below, keeps heading from crowding it */}
       <div className="mx-auto mt-[26px] w-full max-w-[950px]">
         <button
           type="button"
@@ -223,8 +211,7 @@ function SellerDashboard() {
                                   {formatEventTime(ev.created_at)}
                                   {ev.location ? ` - ZIP ${ev.location}` : ''}
                                 </span>
-                                {/* The event column really is capitalised
-                                    "Description" in the API payload. */}
+                                {/* API really does capitalise "Description" */}
                                 <span className={s.entryBody}>{ev.Description ?? ''}</span>
                               </li>
                             ))}

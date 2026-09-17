@@ -175,8 +175,7 @@ async def get_seller_me(seller: CurrSellerDep):
 @router.get(
     "/shipments",
     name="List Seller Shipments",
-    # Shipment has no created_at column; estimated_delivery is set to creation
-    # time + 3 days, so ordering by it descending puts the newest first.
+    # No created_at column; estimated_delivery (creation + 3 days) stands in for it.
     description="List every **shipment** created by the authenticated seller, newest first.",
     response_model=list[ShipmentRead],
     responses={

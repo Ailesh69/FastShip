@@ -2,29 +2,21 @@ import { useCallback, useEffect, useRef } from 'react'
 import { canHover } from './depthEngine'
 import { motionIntensity } from './motionPolicy'
 
-// Magnetic buttons: the control leans a few px toward the cursor while it is
-// over it, then springs back on leave.
-//
-// Returns a CALLBACK ref for the button ITSELF, alongside the `mag` class:
+// Magnetic buttons: control leans a few px toward the cursor, springs back
+// on leave. Returns a CALLBACK ref for the button itself + `mag` class:
 //
 //   const mag = useMagnetic()
 //   <button ref={mag} className="pixel-btn mag ...">
 //
-// A callback ref rather than a plain one because several of these buttons are
-// rendered conditionally — Login's [ SEND RESET LINK ] only exists once the
-// panel is open, SignupForm swaps its submit for [ GO TO LOGIN ] after a
-// successful register. An effect keyed on mount would bind listeners to
-// whatever was there at mount time (usually nothing) and never rebind; this
-// attaches and detaches as the element itself comes and goes.
+// Callback ref (not plain) because some buttons mount conditionally (e.g.
+// swapped-in submit buttons) — this attaches/detaches as the element comes
+// and goes, rather than binding once at an effect's mount time.
 //
-// Deliberately tracked from `pointerenter` rather than a window-level
-// listener. A global listener per button is how "magnetic" is usually built,
-// but it means every button on the page runs maths on every mouse move; this
-// version costs nothing until the cursor is actually on the control, and the
-// lean-plus-spring still reads as magnetism.
+// Tracked from `pointerenter`, not a window listener, so it costs nothing
+// until the cursor is actually on the control.
 //
-// `strength` stays well inside the button's own padding so the visual never
-// separates from the real hit area — the thing you see is the thing you click.
+// `strength` stays inside the button's padding so hit area never separates
+// from what's visually shown.
 
 /** @param strength peak travel in px at the button's edge */
 export default function useMagnetic({ strength = 6 } = {}) {
@@ -80,8 +72,7 @@ export default function useMagnetic({ strength = 6 } = {}) {
       el.addEventListener('pointerenter', onEnter)
       el.addEventListener('pointermove', onMove, { passive: true })
       el.addEventListener('pointerleave', onLeave)
-      // Keyboard users never fire pointerleave; blur is the equivalent
-      // "done with this control" signal for them.
+      // Keyboard users never fire pointerleave — blur is their equivalent.
       el.addEventListener('blur', onLeave)
 
       detach.current = () => {
@@ -95,7 +86,7 @@ export default function useMagnetic({ strength = 6 } = {}) {
     [strength],
   )
 
-  // A button can be unmounted mid-lean — clicking it navigates away.
+  // Button can unmount mid-lean — clicking it navigates away.
   useEffect(
     () => () => {
       if (detach.current) detach.current()

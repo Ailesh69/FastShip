@@ -142,21 +142,12 @@ export class FastShipIntro {
     this.buffer.width = Math.max(80, Math.round(w / this.pixelSize));
     this.buffer.height = Math.max(60, Math.round(h / this.pixelSize));
 
-    // The visible canvas is sized to the BUFFER, not to the viewport.
-    //
-    // Every pixel of this scene is drawn into `buffer` at 1/pixelSize scale and
-    // then blown up with smoothing off — so a viewport-sized backing store held
-    // nothing but a nearest-neighbour upscale of an image a ninth of its size,
-    // and the browser had to re-upload the whole thing to the GPU every frame.
-    // At 1920x1080 that is 8.3MB per frame; at 640x360 it is 0.9MB.
-    //
-    // The upscale still happens — `.fsi-canvas` is width/height 100% with
-    // `image-rendering: pixelated` (fastship-intro.css), so the compositor does
-    // exactly the same nearest-neighbour stretch, on the GPU, for free.
-    //
-    // Measured on a 15W integrated-graphics laptop at 1920x1080: 55.1fps with
-    // ~52 dropped frames per run, to 60fps with 0. Do not "fix" this back to
-    // viewport size — the scene has no detail above buffer resolution to show.
+    // Canvas is sized to the BUFFER, not the viewport — a viewport-sized
+    // backing store would just hold an upscaled copy of a 1/9-size image and
+    // force a full re-upload to the GPU every frame. `.fsi-canvas` is 100%
+    // width/height with `image-rendering: pixelated`, so the compositor does
+    // the same nearest-neighbour stretch on the GPU for free. Measured: fixes
+    // ~52 dropped frames/run at 1920x1080 on integrated graphics. Don't revert to viewport size.
     this.canvas.width = this.buffer.width;
     this.canvas.height = this.buffer.height;
 
@@ -429,8 +420,7 @@ export class FastShipIntro {
       g.fillRect(0, 0, w, h);
     }
 
-    // Straight 1:1 copy of the buffer — the canvas is the same size as it now
-    // (see resize). The upscale to the viewport is the compositor's job.
+    // 1:1 copy — canvas is buffer-sized now; compositor handles the viewport upscale.
     this.ctx.imageSmoothingEnabled = false;
     this.ctx.drawImage(this.buffer, 0, 0, this.canvas.width, this.canvas.height);
 
@@ -589,17 +579,10 @@ export class FastShipIntro {
     };
 
     g.shadowColor = PALETTE.mint;
-    // 3, not 7. This shadow is not applied once — it is live for every stroke
-    // in the two loops below plus every ring after them, i.e. 50-100 shadowed
-    // draws per frame, and canvas shadow cost climbs steeply with radius.
-    // Measured on a 15W integrated-graphics laptop at 1920x1080, with only
-    // this number changed: 7 -> ~30 dropped frames per run, 5 -> ~28,
-    // 3 -> zero. The glow survives the drop because the buffer is upscaled
-    // 3x with `image-rendering: pixelated`, so a 3px blur here still reads as
-    // ~9px of bloom on screen and the nearest-neighbour upscale quantises away
-    // most of what the wider radius was adding.
-    // The ignition core's own shadow (_drawCore) is deliberately left alone:
-    // it is a handful of draws per frame, not a loop, and never showed up.
+    // shadowBlur 3, not 7: this runs 50-100 shadowed draws/frame here, and
+    // canvas shadow cost climbs steeply with radius (7 -> ~30 dropped
+    // frames/run measured, 3 -> 0). Glow survives since the 3x pixelated
+    // upscale already reads a 3px blur as ~9px of bloom.
     g.shadowBlur = 3;
 
     const nx = Math.max(6, Math.round((halfX * 2) / spacing));

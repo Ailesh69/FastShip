@@ -1,8 +1,6 @@
 import api from './client'
 
-// Seller, partner and client each get their own FastAPI router with an
-// identical auth surface (/register, /token, /me, /forgot_password), so the
-// role only ever decides the prefix.
+// Each role has its own router with identical auth surface — role only picks the prefix.
 const PREFIXES = { seller: '/seller', partner: '/partner', client: '/client' }
 
 function prefixFor(userType) {
@@ -11,9 +9,8 @@ function prefixFor(userType) {
   return prefix
 }
 
-// OAuth2 password flow. Two things the rest of the app never has to think
-// about: the body is form-encoded, not JSON, and the identity field is called
-// "username" even though its value is an email address.
+// OAuth2 password flow: form-encoded body, identity field named "username"
+// but holds the email.
 export async function loginUser(email, password, userType) {
   const body = new URLSearchParams({
     grant_type: 'password',
@@ -26,23 +23,21 @@ export async function loginUser(email, password, userType) {
   return data.access_token
 }
 
-// `data` must already match the role's schema — see roleSignupPayload() in
-// components/signupPayload.js, which is what builds it from the form.
+// `data` must match the role's schema — built by roleSignupPayload() in
+// components/signupPayload.js.
 export async function registerUser(data, userType) {
   const res = await api.post(`${prefixFor(userType)}/register`, data)
   return res.data
 }
 
-// `token` is only passed during login, where the session has not been written
-// to localStorage yet and so the request interceptor has nothing to attach.
+// `token` only passed during login, before it's in localStorage for the interceptor.
 export async function getProfile(userType, token) {
   const config = token ? { headers: { Authorization: `Bearer ${token}` } } : undefined
   const { data } = await api.get(`${prefixFor(userType)}/me`, config)
   return data
 }
 
-// GET, not POST: all three routers declare forgot_password with @router.get
-// and read the address off the query string.
+// GET, not POST — forgot_password reads the address off the query string.
 export async function forgotPassword(email, userType) {
   const { data } = await api.get(`${prefixFor(userType)}/forgot_password`, {
     params: { email },

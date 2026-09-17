@@ -4,32 +4,26 @@ import useMagnetic from '../motion/useMagnetic'
 import { useLoadingNav } from '../context/loadingNav'
 import { apiError } from '../api/client'
 
-// Shared sign-up card, used by every role's sign-up page. Callers pass the
-// `fields` list, the `title` and the `submitLabel`; everything else — card
-// chrome, field wells, icon sizing, validation and the returning-user line —
-// is identical across roles so the pages can't drift apart.
+// Shared sign-up card for every role. Caller passes `fields`/`title`/
+// `submitLabel`; everything else (chrome, validation, returning-user line)
+// is identical across roles. Styling: .signup-card/.field-box/.bracket-btn/
+// .field-error in index.css.
 //
-// Styling lives in index.css: .signup-card / .field-box / .bracket-btn /
-// .field-error.
-//
-// The role-specific parts stay with the caller: `onSubmit` receives the raw
-// field values and is responsible for turning them into that role's register
-// payload, and `validateFields` adds any checks beyond required-and-matching.
+// `onSubmit` turns raw field values into that role's register payload;
+// `validateFields` adds checks beyond required-and-matching.
 
 const CARD_W = 470
 const PAD_X = 30
 const CONTENT_W = CARD_W - PAD_X * 2 - 4 // minus the 2px border either side
 
-// Press Start 2P advances exactly 1em per character, so the largest size that
-// still fits on one line is content width / character count. Keeps long titles
-// like "DELIVERY PARTNER SIGNUP" on a single line without hand-tuning.
+// Font advances 1em/char, so max size that fits one line = width / char count.
+// Keeps long titles like "DELIVERY PARTNER SIGNUP" on one line, no hand-tuning.
 function titleSize(title) {
   return Math.min(26, Math.floor(CONTENT_W / title.length))
 }
 
-// A gentle pull on a full-width bar — see the note in Track.jsx. The two
-// buttons take separate hooks because they are in opposite branches of the
-// `registered` swap and only ever one of them exists.
+// Separate hooks per button: opposite branches of the `registered` swap,
+// only one ever exists.
 const SUBMIT_PULL = { strength: 3 }
 
 function SignupForm({ title, fields, submitLabel, onSubmit, validateFields }) {
@@ -50,16 +44,15 @@ function SignupForm({ title, fields, submitLabel, onSubmit, validateFields }) {
   }
 
   const validate = () => {
-    // Caller checks run first so a REQUIRED message always wins on an empty
-    // field — role validators only look at fields the user actually filled in.
+    // Caller checks run first so REQUIRED always wins on an empty field.
     const next = { ...(validateFields?.(values) ?? {}) }
 
     for (const f of fields) {
       if (!values[f.name].trim()) next[f.name] = 'REQUIRED FIELD'
     }
 
-    // Password match, checked only once both boxes have something in them so
-    // the mismatch message doesn't pile on top of two REQUIRED messages.
+    // Only flag mismatch once both boxes are filled, so it doesn't pile
+    // on top of two REQUIRED messages.
     const pw = values.password
     const confirm = values.confirm
     if (!next.confirm && pw && confirm && pw !== confirm) {
@@ -79,9 +72,8 @@ function SignupForm({ title, fields, submitLabel, onSubmit, validateFields }) {
     setBusy(true)
     try {
       await onSubmit(values)
-      // Registration only creates the account — the backend emails a
-      // verification link and /token refuses to issue a token until it is
-      // clicked, so sending the user straight to /login would strand them.
+      // Account isn't usable yet — /token refuses until the emailed
+      // verification link is clicked, so don't send straight to /login.
       setRegistered(true)
     } catch (err) {
       setFormError(apiError(err, 'COULD NOT CREATE ACCOUNT'))
@@ -97,9 +89,7 @@ function SignupForm({ title, fields, submitLabel, onSubmit, validateFields }) {
       className="signup-card relative z-10 my-auto rounded-[6px]"
       style={{ width: CARD_W, maxWidth: '92vw', padding: `24px ${PAD_X}px 26px` }}
     >
-      {/* Title, inside the card as in the reference. Uses the CLEAN glow — the
-          hero's .title-glow carries a hard 4px offset step that ghosts at this
-          size. Soft cyan/blue bloom only, no distortion layers. */}
+      {/* CLEAN glow, not hero's .title-glow — that hard 4px offset ghosts at this size. */}
       <h1
         className="title-glow-clean m-0 text-center leading-none"
         style={{ fontSize: titleSize(title) }}
@@ -107,12 +97,9 @@ function SignupForm({ title, fields, submitLabel, onSubmit, validateFields }) {
         {title}
       </h1>
 
-      {/* Inputs. The submit button lives INSIDE this same gap container, so the
-          space above it is structurally identical to the space between every
-          field pair — it can't drift out of step with a hand-tuned margin.
-
-          Once the account exists the fields are replaced rather than merely
-          disabled: resubmitting the same address would only earn a 409. */}
+      {/* Submit button lives in the same gap container as the fields, so its
+          spacing can't drift from a hand-tuned margin. Once registered, fields
+          are replaced (not just disabled) — resubmit would only 409. */}
       {registered ? (
         <div className="mt-[34px] flex flex-col gap-[15px]">
           <p

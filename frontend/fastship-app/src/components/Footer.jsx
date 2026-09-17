@@ -1,5 +1,4 @@
-// Bottom footer: a divider rule on each side of the row, then the left-aligned
-// ABOUT ME link and the copyright line.
+// Bottom footer: divider rules, then left-aligned ABOUT ME link + copyright.
 function Footer() {
   const rule = {
     height: 3,

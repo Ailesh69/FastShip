@@ -2,15 +2,12 @@ import { useEffect, useState } from 'react'
 import { subtitleFor, useLoadingNav } from '../context/loadingNav'
 import TurretSprite from './TurretSprite'
 
-// Full-screen transition overlay. It sits above the current page and blocks all
-// interaction underneath, while the shared animated background and sprite field
-// stay visible through the scrim around the panel — no background is duplicated
-// here, it is simply the live page showing through.
+// Full-screen transition overlay, blocks interaction below it. No duplicated
+// background — the live page shows through the scrim around the panel.
 
 const CAPTIONS = ['PROCESSING DATA PACKETS...', 'SYNCING INVENTORY...', 'LOADING ASSETS...']
 
-// Given a `key`, this remounts per navigation, so the caption always restarts
-// from the first line without needing a reset.
+// Remounts per navigation (via key) so the caption always restarts at line 1.
 function CyclingCaption() {
   const [i, setI] = useState(0)
 
@@ -78,8 +75,8 @@ function LoadingOverlay() {
           {pct}%
         </div>
 
-        {/* 5. firing turret — nudged left so the muzzle sits near the panel's
-            centre line and the tracers have room to fly out past its edge */}
+        {/* 5. firing turret — nudged left so muzzle sits near panel centre
+            and tracers have room to fly past the edge */}
         <div className="mt-[10px] flex h-[126px] w-full items-center justify-center">
           <div style={{ transform: 'translateX(-54px)' }}>
             <TurretSprite />

@@ -6,12 +6,9 @@ import { apiError } from '../api/client'
 import { shortId } from '../components/shipmentStatus'
 import s from './SubmitShipment.module.css'
 
-// SELLER — submit a new shipment.
-//
-// POSTs to /shipment/ with the seller's token. The backend assigns a delivery
-// partner covering the destination zip at creation time, so a submit can fail
-// on coverage (406) as easily as on a bad field — both surface in the same
-// message line.
+// SELLER — submit a new shipment. POSTs to /shipment/; backend assigns a
+// partner by destination zip, so a submit can fail on coverage (406) too,
+// not just bad fields — both show in the same message line.
 
 const FIELDS = [
   {
@@ -77,8 +74,7 @@ function SubmitShipment() {
     for (const f of FIELDS) {
       if (f.required && !values[f.name].trim()) next[f.name] = 'REQUIRED FIELD'
     }
-    // destination is an INTEGER zip column, and weight is capped at 25kg by the
-    // schema — catching both here beats a 422 with no field attached.
+    // destination is an int zip column, weight capped at 25kg — catch here, not as a bare 422
     if (!next.destination && !/^\d+$/.test(values.destination.trim())) {
       next.destination = 'ZIP CODE MUST BE DIGITS ONLY'
     }
@@ -104,8 +100,7 @@ function SubmitShipment() {
         weight: Number(values.weight),
         destination: Number(values.destination.trim()),
         client_contact_email: values.clientEmail.trim(),
-        // Omitted rather than sent empty: the column is nullable, and "" is not
-        // a phone number.
+        // omit rather than send "" — column is nullable, "" isn't a phone number
         client_contact_phone: values.clientPhone.trim() || null,
       })
       setCreated(shipment)

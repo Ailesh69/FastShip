@@ -1,8 +1,6 @@
 """Mark an account's email as verified, without the emailed link.
 
-For local testing only. The verification link in an email points at
-APP_BASE_URL, so a tester on another device cannot open it unless that address
-is reachable from their machine. This flips the same flag the link would.
+For local testing, when the link's APP_BASE_URL isn't reachable from your device.
 
 Usage:
     python -m scripts.verify_account seller swyamkapoor.cse@gmail.com
@@ -50,11 +48,7 @@ async def verify(engine, table: str, email: str) -> int:
             print("Check the spelling — run with --list to see what is actually stored.")
             return 1
 
-        # seller and delivery_partner have no unique index on email, so the same
-        # address can appear more than once. login() looks the account up with a
-        # plain SELECT and takes whichever row comes back first, so verifying
-        # just one of them can still leave the user unable to sign in. Flip them
-        # all and say so.
+        # email has no unique index here, so duplicates are possible; verify all of them.
         if len(rows) > 1:
             print(f"WARNING: {len(rows)} {table} rows share {email!r}:")
             for r in rows:

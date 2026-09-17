@@ -14,18 +14,15 @@ import { apiError } from '../api/client'
 import s from './UpdateShipment.module.css'
 
 // DELIVERY PARTNER — update a shipment's status.
-//
-// The ?id= query param names the shipment; it is fetched on mount to fill the
-// read-only header and the event log, and every save PATCHes /shipment/ and
-// re-reads the result so the timeline below reflects what was actually stored.
+// ?id= names the shipment. Loaded on mount; each save PATCHes /shipment/ and
+// re-reads so the timeline reflects what was actually stored.
 
 // <input type="date"> gives back YYYY-MM-DD, but estimated_delivery is a
 // datetime column — send midnight so FastAPI parses it as one.
 const asDateTime = (day) => (day ? `${day}T00:00:00` : undefined)
 
-// ...and the reverse, to seed the field from the shipment's current value.
-// Built from the local date parts rather than toISOString(), which converts to
-// UTC first and can hand back the neighbouring day.
+// Reverse of above, to seed the field. Built from local date parts, not
+// toISOString() — that converts to UTC and can shift the day.
 const asDay = (iso) => {
   if (!iso) return ''
   const d = new Date(iso)
@@ -53,17 +50,14 @@ function UpdateShipment() {
   const needsOtp = form.status === 'delivered'
 
   const load = useCallback(async () => {
-    // A missing id is a render-time condition, not a fetch failure — see the
-    // `missingId` branch below.
+    // missing id is a render condition, not a fetch failure (see `missingId` below)
     if (!shipmentId) return
     try {
       const data = await getShipment(shipmentId)
       setShipment(data)
       setLoadError('')
-      // Prefill from the record so a save that only changes one field doesn't
-      // silently reset the estimated delivery date. "placed" is not in the
-      // dropdown — a shipment still sitting there gets the natural next step
-      // selected instead of an empty select.
+      // prefill so a one-field save doesn't reset delivery date; "placed" isn't
+      // in the dropdown, so default to the next real status instead
       const current = latestStatus(data)
       setForm((f) => ({
         ...f,
@@ -77,8 +71,7 @@ function UpdateShipment() {
     }
   }, [shipmentId])
 
-  // Awaited inside the effect rather than called bare, so the state updates
-  // land after the fetch instead of synchronously during the effect body.
+  // await inside effect so state updates land after the fetch, not mid-body
   useEffect(() => {
     ;(async () => {
       await load()
@@ -105,15 +98,13 @@ function UpdateShipment() {
       return
     }
 
-    // Every field on ShipmentUpdate is optional and the backend drops nulls, so
-    // only what the partner actually filled in is sent.
+    // only send fields the partner actually filled in (rest is optional, backend drops nulls)
     const payload = {}
     if (form.status) payload.status = form.status
     if (form.location.trim()) payload.location = Number(form.location.trim())
     if (form.description.trim()) payload.description = form.description.trim()
     if (form.estimatedDelivery) payload.estimated_delivery = asDateTime(form.estimatedDelivery)
-    // Only ever sent alongside status=delivered; the backend checks it against
-    // the code texted to the recipient when the parcel went out for delivery.
+    // sent only with status=delivered; backend checks it against the code texted to recipient
     if (needsOtp) payload.verification_code = form.otp.trim()
 
     setSaving(true)

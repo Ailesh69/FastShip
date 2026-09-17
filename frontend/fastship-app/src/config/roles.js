@@ -1,7 +1,4 @@
-// Canonical account roles — the single source of truth for role keys and the
-// routes each role owns. Pages previously used three different vocabularies
-// ('general'/'customer'/'client', 'delivery'/'partner'); everything now agrees
-// on these three keys, which also match the URL prefixes.
+// Canonical role keys + routes. Keys match URL prefixes.
 export const ROLES = {
   client: {
     label: 'GENERAL USER',

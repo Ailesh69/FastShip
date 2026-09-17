@@ -9,13 +9,8 @@ _serializer = URLSafeTimedSerializer(security_settings.JWT_SECRET)
 TEMPLATE_DIR = Path(__file__).parent / "templates"
 STATIC_DIR = Path(__file__).parent / "static"
 
-# Lifetimes for the signed links that leave the server by email.
-#
-# decode_url_safe_token() takes an `expiry`, but every caller left it at None —
-# and None means max_age=None, i.e. itsdangerous never checks the age at all.
-# A password-reset link forwarded, logged by a mail provider or left in an inbox
-# stayed valid for the lifetime of the signing key. These are the defaults the
-# callers now pass.
+# Lifetimes for signed email links. Must be passed explicitly to
+# decode_url_safe_token() — expiry=None means itsdangerous never checks age.
 EMAIL_VERIFY_EXPIRY = timedelta(days=3)
 PASSWORD_RESET_EXPIRY = timedelta(hours=1)
 REVIEW_LINK_EXPIRY = timedelta(days=30)

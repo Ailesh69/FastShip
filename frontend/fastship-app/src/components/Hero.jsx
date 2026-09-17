@@ -2,19 +2,12 @@ import StatCard from './StatCard'
 import Reveal from '../motion/Reveal'
 import { TreasureChest, HappyFace, StarCluster } from './PixelIcons'
 
-// The centred hero block: title, subtitle, description, stat row.
+// Centred hero block: title, subtitle, description, stat row. Each piece
+// arrives on its own 90ms beat (powering up, not a queue) via Reveal, which
+// renders the same elements/classes — only arrival changes.
 //
-// Each line arrives on its own beat rather than the block appearing at once —
-// title, subtitle, copy, then the three stat boxes. The stagger is small (90ms)
-// so the whole assembly is done in well under a second; it should read as the
-// hero powering up, not as a queue.
-//
-// Reveal renders the SAME elements with the same classes (see motion/Reveal),
-// so the layout, spacing and type here are untouched — only how they arrive.
-//
-// `revealWhen` is the home page's intro flag. The cinematic intro covers this
-// content completely while it plays, and IntersectionObserver would happily
-// fire behind it, so the reveal is held until the curtain is actually up.
+// `revealWhen`: home page's intro flag. Intro curtain covers this while
+// playing, so reveal waits for it rather than firing behind it.
 const STEP = 90
 
 function Hero({ revealWhen = true }) {
@@ -52,8 +45,7 @@ function Hero({ revealWhen = true }) {
         up your shopping experience!
       </Reveal>
 
-      {/* Stat row — each box carries its own rim colour, and each pops in
-          behind the one to its left. */}
+      {/* Stat row — each box has its own rim colour, pops in after the last */}
       <div className="mt-[22px] flex flex-wrap items-center justify-center gap-[20px]">
         <Reveal variant="pop" delay={STEP * 3} enabled={revealWhen}>
           <StatCard

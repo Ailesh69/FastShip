@@ -10,10 +10,8 @@ import {
   UserIcon,
 } from '../components/PixelIcons'
 
-// Role sign-up screens. Every role renders the same <SignupForm /> and differs
-// only in its title, field list, submit label and the shape of the payload its
-// /register endpoint expects — so field styling, card chrome and shared
-// validation stay identical across all of them.
+// Role sign-up screens. All render the same <SignupForm />, differing only in
+// title, fields, submit label and payload shape for /register.
 
 const CUSTOMER_FIELDS = [
   { name: 'username', label: 'USERNAME:', type: 'text', icon: UserIcon, autoComplete: 'username' },
@@ -45,8 +43,7 @@ const DELIVERY_FIELDS = [
     autoComplete: 'postal-code',
   },
   { name: 'capacity', label: 'MAX HANDLING CAPACITY:', type: 'text', icon: BoxIcon },
-  // Multiple values in one row, kept as a comma-separated list so every field
-  // stays the same height and border as the rest.
+  // comma-separated so this field matches the height/border of the rest
   {
     name: 'serviceZips',
     label: 'SERVICEABLE ZIP CODES:',
@@ -90,8 +87,7 @@ const SELLER_FIELDS = [
   },
 ]
 
-// Zip codes and capacities are INTEGER columns on the backend, so they are
-// parsed here rather than posted as the strings the inputs hold.
+// zip/capacity are int columns on the backend — parse before posting
 const DIGITS = /^\d+$/
 
 const zipList = (raw) =>
@@ -107,7 +103,7 @@ const ROLE_FORMS = {
     title: 'CUSTOMER SIGNUP',
     fields: CUSTOMER_FIELDS,
     submitLabel: '[ CREATE ACCOUNT ]',
-    // The form calls it USERNAME; ClientCreate calls it name.
+    // form calls it USERNAME; ClientCreate calls it name
     toPayload: (v) => ({
       name: v.username.trim(),
       email: v.email.trim(),
@@ -169,7 +165,7 @@ function PathSignup({ role: roleKey }) {
     )
   }
 
-  // Unknown role in the URL — every real path is covered by ROLES above.
+  // unknown role in URL — real paths are all covered by ROLES above
   return (
     <section className="relative z-10 my-auto flex flex-col items-center px-4 text-center">
       <h1 className="title-glow m-0 text-[40px] leading-none">UNKNOWN PATH</h1>

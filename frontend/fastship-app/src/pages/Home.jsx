@@ -7,18 +7,13 @@ import { useLoadingNav } from '../context/loadingNav'
 
 const INTRO_STORAGE_KEY = 'fastship:intro-played'
 
-// HOME / landing page — the FASTSHIP hero intro plus the blinking
-// "insert coin" prompt that sits down in the empty floor area.
-//
-// The cinematic pixel-art intro (src/components/intro) plays once per
-// session, above everything else, before this content is visible. introDone
-// mirrors its own sessionStorage flag so a repeat visit this session never
-// mounts the overlay or shows a hidden-content flash.
+// HOME / landing page — FASTSHIP hero intro plus the blinking "insert coin" prompt.
+// Pixel-art intro (src/components/intro) plays once per session, above
+// everything else. introDone mirrors sessionStorage so a repeat visit this
+// session skips the overlay and any hidden-content flash.
 function Home() {
   const { go } = useLoadingNav()
-  // The page's one call to action leans toward the cursor. It is the only
-  // thing to do on this screen, so it is the one element that gets to reach
-  // back for the pointer.
+  // only CTA on the page, so it's the one element that gets magnetic pull
   const start = useMagnetic({ strength: 7 })
   const [introDone, setIntroDone] = useState(
     () => typeof window !== 'undefined' && window.sessionStorage.getItem(INTRO_STORAGE_KEY) === '1',
@@ -26,36 +21,22 @@ function Home() {
 
   return (
     <>
-      {/* Portaled to <body>: <main> and <footer> (App.jsx/Footer.jsx) are both
-          `relative z-10` siblings, each their own stacking context — footer
-          wins ties as the later one in DOM order, which traps anything
-          rendered inside <main> (including this, at Home's normal position)
-          behind it regardless of the intro's own z-index:9999. Rendering
-          straight onto <body> escapes that entirely. */}
+      {/* portaled to <body>: <main>/<footer> are sibling stacking contexts, footer
+          wins DOM-order ties and would trap this behind it despite z-index:9999 */}
       {!introDone &&
         createPortal(<FastShipIntro onComplete={() => setIntroDone(true)} />, document.body)}
 
-      {/* flex-1/flex-col/items-center mirrors <main>'s own flex properties
-          (App.jsx) — the button's `my-auto` needs THIS element's leftover
-          space to distribute into, or it collapses flush under the hero
-          instead of centering below it. */}
+      {/* mirrors <main>'s flex props so the button's my-auto has space to center into */}
       <div
         className="flex w-full flex-1 flex-col items-center"
         style={{ opacity: introDone ? 1 : 0, transition: 'opacity 600ms ease' }}
       >
-        {/* The hero assembles itself once the intro is out of the way — see
-            the note on `revealWhen` in Hero.jsx. */}
+        {/* hero assembles once intro is done, see revealWhen in Hero.jsx */}
         <Hero revealWhen={introDone} />
 
-        {/* Blinking prompt: dashed orange frame, teal text, transparent fill.
-            `my-auto` splits the leftover space above evenly above and below,
-            so the prompt sits centred between the stat row and the footer
-            rather than leaving a gap where the CTA button used to be.
-
-            No <Reveal> here: `blink` is a CSS animation on opacity, and an
-            animation beats the transition a reveal would use — the button
-            would simply ignore it. The magnet is transform-only, so the two
-            coexist. */}
+        {/* my-auto centers this between stat row and footer.
+            no <Reveal>: blink is a CSS opacity animation and would just ignore
+            Reveal's transition; the magnet is transform-only so it still coexists */}
         <button
           ref={start}
           type="button"

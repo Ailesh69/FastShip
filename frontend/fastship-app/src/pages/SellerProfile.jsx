@@ -2,21 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import { useLoadingNav } from '../context/loadingNav'
 import { getProfile } from '../api/auth'
 import { apiError } from '../api/client'
-// Same visual language as the client and partner profile editors — imported
-// rather than duplicated, so the three editors can't drift apart. `p` carries
-// the avatar/panel/row/button styles; `b` carries the read-only badge row.
+// reuses client/partner editor styles so the three can't drift apart.
+// `p` = avatar/panel/row/button styles, `b` = read-only badge row.
 import p from './ProfileEditor.module.css'
 import b from './PartnerProfile.module.css'
 
-// SELLER — profile editor.
-//
-// Fields come from GET /seller/me — { name, email, zipcode, email_verified,
-// created_at }. Deliberately no phone, address or extra sections: keeping the
-// form matched to the schema is what stops it drifting the way the client
-// editor did.
-//
-// Saving is still local. There is no seller-update endpoint on the backend, so
-// the confirmation line says exactly that rather than implying a write.
+// SELLER — profile editor. Fields from GET /seller/me — { name, email,
+// zipcode, email_verified, created_at }. No phone/address/extras — stays
+// matched to schema. Saving is local: no seller-update endpoint exists.
 
 // The API stores no avatar, so every seller starts from the same sprite.
 const DEFAULT_AVATAR =
@@ -28,8 +21,7 @@ const SECURITY = [
   { name: 'confirmPassword', label: 'CONFIRM NEW PASSWORD:', autoComplete: 'new-password' },
 ]
 
-// Arc for the curved "UPDATE PROFILE PHOTO" label — same geometry as the other
-// two editors so the three avatars are identical.
+// same arc geometry as the other two editors, keeps avatars identical
 const TEXT_ARC = 'M 26.6 148.9 A 92 92 0 1 1 193.4 148.9'
 
 const formatDate = (iso) => {
@@ -40,9 +32,7 @@ const formatDate = (iso) => {
     : d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase()
 }
 
-// Outer shell: fetches /seller/me and only mounts the editor once the record
-// exists, so the form's initial state can be seeded straight from it instead of
-// being re-synced by an effect.
+// fetches /seller/me, mounts editor only once loaded so initial state seeds straight from it
 function SellerProfile() {
   const [seller, setSeller] = useState(null)
   const [error, setError] = useState('')
@@ -98,7 +88,7 @@ function SellerProfileForm({ seller }) {
   const fileRef = useRef(null)
   const objectUrl = useRef(null)
 
-  // Revoke the last preview URL so picking several photos doesn't leak blobs.
+  // revoke last preview URL, avoids leaking blobs across multiple picks
   useEffect(
     () => () => {
       if (objectUrl.current) URL.revokeObjectURL(objectUrl.current)
@@ -121,7 +111,7 @@ function SellerProfileForm({ seller }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    // Local only: the seller router exposes no profile-update endpoint.
+    // local only: seller router has no profile-update endpoint
     setSaved(true)
   }
 

@@ -44,11 +44,9 @@ export default function FastShipIntro({
     }, 620);
   }, [onComplete, once, storageKey]);
 
-  // While the intro is actually covering the screen, take the landing page's
-  // animated scenery out of the frame — see the `.fsi-playing` note in
-  // fastship-intro.css for why and for the measurements. The class comes off
-  // as soon as `leaving` flips, so the scene is painting again underneath
-  // before the 620ms fade-out is done and nothing appears to pop in.
+  // Drop the landing page's scenery out of frame while intro covers screen
+  // (see `.fsi-playing` in fastship-intro.css). Class comes off as soon as
+  // `leaving` flips, so the scene is already painting under the fade-out.
   useEffect(() => {
     const root = document.documentElement;
     root.classList.toggle('fsi-playing', mounted && !leaving);
@@ -81,12 +79,8 @@ export default function FastShipIntro({
     });
     engineRef.current = engine;
     engine.start();
-    // No `if (reduced) engine.finish()` here any more. That call jumped
-    // straight to the resting frame, so anyone with the OS reduced-motion
-    // preference set never saw the intro at all — it looked like the animation
-    // was simply broken. The site does not honour that preference by design;
-    // see src/motion/motionPolicy.js for the switch and the reasoning.
-    // `finish()` itself is kept — Skip / Escape / click still use it.
+    // No reduced-motion early finish() — see motionPolicy.js, site doesn't
+    // honour that preference by design. finish() itself still used by Skip/Escape/click.
 
     const onKey = (e) => {
       if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') complete();
@@ -109,13 +103,10 @@ export default function FastShipIntro({
       <canvas ref={canvasRef} className="fsi-canvas" aria-hidden="true" />
 
       <div ref={titleRef} className="fsi-titleblock" style={{ opacity: 0 }}>
-        {/* A <div>, not an <h1>. This overlay is portaled onto <body> while the
-            landing page is already mounted underneath, so an <h1> here made the
-            home page carry two of them for the ~10s the intro runs. The real
-            document heading is the hero's <h1> (components/Hero.jsx); this is
-            the same word rendered as a decorative title card, and the
-            screen-reader announcement is the .fsi-sr line below.
-            All styling is class-based, so the tag change is purely semantic. */}
+        {/* <div>, not <h1> — an <h1> here would duplicate Hero.jsx's real
+            heading while both are mounted. Decorative only; .fsi-sr below
+            handles the screen-reader announcement. Purely semantic change,
+            styling is all class-based. */}
         <div className="fsi-title" data-text={title}>
           {title}
         </div>

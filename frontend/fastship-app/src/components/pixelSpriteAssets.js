@@ -1,6 +1,5 @@
-// Shared pixel-art grids reused by more than one component (PixelSprites,
-// PixelIcons, WarpOverlay). Kept in its own plain module — not a component —
-// so importers stay eligible for fast refresh.
+// Shared pixel-art grids (PixelSprites, PixelIcons, WarpOverlay). Plain
+// module, not a component, so importers stay eligible for fast refresh.
 
 export const SPARKLE = [
   '.......S.......',

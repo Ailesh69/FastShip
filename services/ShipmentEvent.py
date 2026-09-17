@@ -58,10 +58,8 @@ class ShipmentEventService(BaseService):
             Description=description,
             shipment_id=shipment.id,
         )
-        # Keep the denormalised column on the shipment row in step with the
-        # newest event. Everything that asks a shipment for its status reads
-        # that column — the API response, and DeliveryPartner.active_shipments,
-        # which decides whether a partner has capacity left for another job.
+        # Keep denormalised shipment.status in sync; API responses and
+        # DeliveryPartner.active_shipments both read this column.
         shipment.status = status
         self.session.add(shipment)
         await self._notify(shipment, status, location)
@@ -114,19 +112,8 @@ class ShipmentEventService(BaseService):
                 }
                 code = randint(100_000, 999_999)
                 await add_otp(shipment.id, code)
-                # The code goes out on EVERY channel we have for this customer,
-                # not just the "best" one.
-                #
-                # It used to be SMS-or-email: given a phone number, the code was
-                # texted and deliberately withheld from the email. That made a
-                # single Twilio failure unrecoverable — the code was generated
-                # and stored, the SMS died in the worker with the web request
-                # already answered 200, and nobody could learn the number. The
-                # shipment could then never be marked delivered, because the
-                # handover check has no other way to pass.
-                #
-                # Both channels belong to the same customer, so sending to both
-                # costs nothing in confidentiality and removes that dead end.
+                # Send OTP on every channel, not just SMS — a silent Twilio failure
+                # used to leave the code unrecoverable and the shipment stuck.
                 context["otp"] = code
                 if shipment.client_contact_phone:
                     send_sms.delay(

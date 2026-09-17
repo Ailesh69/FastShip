@@ -3,32 +3,17 @@ import Reveal from '../motion/Reveal'
 import useMagnetic from '../motion/useMagnetic'
 import { useLoadingNav } from '../context/loadingNav'
 
-// 404 — the catch-all route.
-//
-// This used to be `<Navigate to="/" replace />`, which silently teleported the
-// visitor home: a mistyped or dead link looked identical to a working one, and
-// there was no way to tell you had gone somewhere that does not exist.
-//
-// Everything here is the site's existing vocabulary — the same `title-glow`
-// heading treatment PathSignup's UNKNOWN PATH screen uses, the same
-// `teal-outline-box` button as "ALREADY REGISTERED?" on the account-select
-// page, and the shared grid/sprite background from the layout in App.jsx. No
-// new colours, type sizes or components.
-//
-// `my-auto` centres the block in the space the shell leaves between the navbar
-// and the footer, matching SelectPath and the sign-up cards.
+// 404 — catch-all route. Used to redirect silently to "/"; now actually shows
+// a not-found page so a dead link doesn't look like a working one.
+// Reuses existing styles (title-glow, teal-outline-box, shared background) —
+// no new colours/components. `my-auto` centres it like SelectPath.
 function NotFound() {
   const { go } = useLoadingNav()
   const home = useMagnetic({ strength: 6 })
 
-  // Soft-404 mitigation. A static host answers every unknown path with the SPA
-  // shell and HTTP 200, so a crawler has no status code telling it this page is
-  // missing and can index an endless supply of dead URLs. This is the signal it
-  // does understand. Added and removed with the component so it is only ever
-  // present on the 404 itself — leaving it behind would de-index a real page.
-  //
-  // If the host can be configured to return a real 404 status for unknown
-  // paths, do that as well; this does not replace it.
+  // Soft-404 fix: static host returns 200 for every path, so tell crawlers via
+  // meta robots instead. Tag added/removed with the component so it never
+  // lingers on a real page. Doesn't replace a proper server-side 404 if available.
   useEffect(() => {
     const tag = document.createElement('meta')
     tag.name = 'robots'
@@ -39,8 +24,7 @@ function NotFound() {
 
   return (
     <section className="relative z-10 my-auto flex flex-col items-center px-4 text-center">
-      {/* One <h1> carrying the whole message. "404" alone would be a heading
-          that says nothing to a crawler or a screen reader. */}
+      {/* one <h1> for the whole message — "404" alone means nothing to a screen reader */}
       <Reveal as="h1" variant="rise" className="title-glow m-0 text-[40px] leading-[1.35]">
         404
         <br />
@@ -68,10 +52,7 @@ function NotFound() {
         </button>
       </Reveal>
 
-      {/* Plain <p>, not a <Reveal>: `blink` is a CSS animation on opacity and
-          an animation beats the transition a reveal uses, so the two cannot
-          share an element — same reason Home's PRESS START button is bare.
-          See the transform/opacity ownership note in motion.css. */}
+      {/* plain <p>, not <Reveal>: `blink` animation and Reveal's transition can't share an element */}
       <p className="blink m-0 mt-[26px] text-[10px] leading-none text-fs-teal">
         PRESS START TO CONTINUE
       </p>

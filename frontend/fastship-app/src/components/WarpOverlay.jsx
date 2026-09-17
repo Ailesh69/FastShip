@@ -1,26 +1,21 @@
 import { useEffect, useRef } from 'react'
 import { useLoadingNav, WARP_COVER_MS, WARP_REVEAL_MS } from '../context/loadingNav'
 
-// Fast alternate to the turret loader: a diagonal pixel-tile wave wipes in to
-// cover the screen, then wipes back out to reveal the destination, with
-// floating cyan/orange particles drifting through the whole thing. Canvas +
-// requestAnimationFrame, ported from a standalone reference implementation.
+// Fast alternate to the turret loader: diagonal pixel-tile wave wipes in to
+// cover the screen, wipes back out to reveal destination, with drifting
+// particles. Canvas + rAF.
 //
-// The reference drove its wave off a per-frame progress increment
-// (`progress += 0.035`), which drifts on anything other than ~60fps. Here
-// progress is derived from real elapsed time instead, and pinned to
-// WARP_COVER_MS / WARP_REVEAL_MS so the visual "fully covered" moment lines
-// up with LoadingNavProvider's own WARP_SWAP_MS route swap.
+// Progress driven by real elapsed time (not the reference's fixed +=0.035
+// per-frame increment, which drifts off ~60fps), pinned to WARP_COVER_MS /
+// WARP_REVEAL_MS so "fully covered" lines up with the route swap.
 //
-// Which of the two overlays shows is decided per-navigation in
-// LoadingNavProvider — this component only renders while that pick is
-// 'warp', and unmounts (via `active` going false) once the timeline ends.
+// LoadingNavProvider decides per-navigation whether this or the other
+// overlay shows; renders only while pick is 'warp'.
 
 const TILE = 32
 const PARTICLE_COUNT = 45
-// Progress value a phase counts as "done" at — headroom above 1 so the
-// diagonal stagger (delay up to 0.4) and the *2.2 tile ramp both fully
-// resolve before the phase flips, same as the reference.
+// "Done" threshold, >1 so diagonal stagger (delay up to 0.4) and the *2.2
+// tile ramp both fully resolve before the phase flips (matches reference).
 const PHASE_DONE = 1.4
 
 function makeParticles(width, height) {
@@ -125,8 +120,7 @@ function WarpOverlay() {
       aria-live="polite"
       aria-label="Loading"
       className="fixed inset-0 z-[100]"
-      // Remounts every navigation so the canvas/particles/timers always
-      // restart clean instead of resuming mid-animation on a rapid re-trigger.
+      // Remounts every nav so canvas/particles/timers restart clean.
       key={destination}
     >
       <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />

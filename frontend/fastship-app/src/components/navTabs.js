@@ -1,15 +1,12 @@
-// Nav tab sets, kept out of Navbar.jsx so that file exports only a component
-// (React Fast Refresh requires that split).
+// Nav tab sets, kept out of Navbar.jsx — Fast Refresh needs that file to
+// export only a component.
 
-// `highlight: false` opts a link out of the active chip. HOME stays plain white
-// even on the landing page — the hero design calls for no box around it.
+// `highlight: false` opts out of the active chip (HOME stays plain white).
 // `inert: true` renders a de-emphasised, non-navigating item.
 export const GUEST_LINKS = [
   { to: '/', label: 'HOME', highlight: false },
   { to: '/login', label: 'LOGIN/SIGNUP', also: ['/signup'], startsWith: ['/signup/'] },
-  // TRACK ORDER used to sit here. It is a seller tool now and lives in
-  // SELLER_TABS below; /track itself is still reachable by URL so existing
-  // links and bookmarks keep working.
+  // TRACK ORDER moved to SELLER_TABS; /track stays reachable by URL for old links.
   { to: '/about', label: 'ABOUT ME' },
 ]
 
@@ -19,9 +16,8 @@ const CLIENT_TABS = [
   { to: '/client/profile', label: 'EDIT PROFILE' },
 ]
 
-// TRACK ORDER is deliberately here and in no other role's set: a seller needs
-// to look up any shipment they dispatched, whereas the dashboard rows already
-// give clients and partners a per-shipment tracking link.
+// TRACK ORDER only here: sellers need to look up any dispatched shipment;
+// clients/partners already get per-shipment links from their dashboard rows.
 const SELLER_TABS = [
   { to: '/seller/dashboard', label: 'DASHBOARD' },
   { to: '/seller/submit-shipment', label: 'SUBMIT SHIPMENT' },

@@ -1,18 +1,12 @@
 import useTilt from '../motion/useTilt'
 import useMagnetic from '../motion/useMagnetic'
 
-// One "choose your path" card: heading, pixel icon, three-line blurb and a
-// SELECT affordance.
+// "Choose your path" card: heading, pixel icon, blurb, SELECT affordance.
+// SELECT's corner marks are individually nudged/tilted so the frame reads
+// hand-placed, not geometric (RPG menu cursor look).
 //
-// SELECT is framed by four small orange corner marks rather than literal
-// square brackets — a classic RPG menu cursor. Each corner is nudged and
-// tilted a little differently so the frame reads hand-placed, not geometric.
-//
-// This is the site's one real "pick something" screen, so it carries the
-// strongest interaction on the site: the card tilts toward the cursor and
-// lifts, and SELECT leans after it. The tilt ref goes on the .path-card
-// element itself and the magnet ref on the button itself, so neither adds a
-// wrapper and an untouched card is identical to before.
+// Strongest interaction on the site: card tilts+lifts, SELECT leans after
+// it. tilt/magnet refs go directly on .path-card/button — no wrapper added.
 
 const CORNERS = [
   // [vertical, horizontal, which borders, tilt]

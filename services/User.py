@@ -16,22 +16,12 @@ from utils import (
 )
 
 
-# bcrypt is called directly rather than through passlib. passlib 1.7.4 is its
-# last release (2020) and is incompatible with bcrypt >= 4.1: probing for an
-# ancient wraparound bug, it hashes an 88-byte secret, which modern bcrypt
-# refuses outright — so every registration and login raised ValueError.
-#
-# The stored format is unchanged. passlib emitted standard $2b$ bcrypt hashes,
-# so every existing password_hash still verifies here.
+# bcrypt used directly, not via passlib (1.7.4, unmaintained, breaks on bcrypt >= 4.1).
+# Stored hash format ($2b$) is unchanged, so old password_hash values still verify.
 
 
 def _prepare(password: str) -> bytes:
-    """bcrypt reads at most 72 bytes of a password and ignores the rest.
-
-    Truncating here keeps that limit explicit and matches what passlib on
-    bcrypt 4.0 silently did, so accounts created before this change still
-    verify with the same password.
-    """
+    """bcrypt only reads 72 bytes; truncate explicitly to match old passlib behavior."""
     return password.encode("utf-8")[:72]
 
 
@@ -72,10 +62,7 @@ class UserService(BaseService):
         token_data = decode_url_safe_token(token, expiry=EMAIL_VERIFY_EXPIRY)
         if not token_data:
             raise BadRequest("Verification link is invalid or has expired")
-        # A signed token for an account that has since been deleted, or one
-        # issued by a different role's router, resolves to nothing here. That
-        # used to be an AttributeError on None — a 500 for what is really a bad
-        # link.
+        # Deleted account or wrong-role token: treat as bad link, not a 500.
         user = await self._get(UUID(token_data["id"]))
         if user is None:
             raise BadRequest("Verification link is invalid or has expired")

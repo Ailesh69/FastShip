@@ -77,9 +77,7 @@ export function HappyFace({ scale = 3 }) {
    Small 12x12 sprites for the sign-up inputs. Rendered at scale 2 (24px),
    which keeps them on whole pixels. */
 
-// Two avatar heads for the username field — female (long hair framing the jaw)
-// and male (short hair). They're kept as SEPARATE sprites with a real gap
-// between them, since the pair reads as a gender choice rather than one glyph.
+// Two separate sprites with a real gap — reads as a gender choice, not one glyph.
 const FEMALE_HEAD = [
   '.FFFFF.',
   'FFFFFFF',
@@ -126,8 +124,7 @@ export function UserIcon({ scale = 2 }) {
   )
 }
 
-// Single mint silhouette — the delivery partner's NAME field. Distinct from the
-// dual-head UserIcon, which is the customer form's gender pair.
+// Single mint silhouette, NAME field — distinct from UserIcon's dual-head.
 const PERSON = [
   '............',
   '....PPPP....',
@@ -490,9 +487,7 @@ export function MarketStall({ scale = 6 }) {
 }
 
 /* ---------------- 1.2K+ 5-STAR REVIEWS: five-star cluster ----------------
-   Three stars across the top (the middle one larger) and two tucked beneath,
-   exactly as they sit in the reference. STAR/STAR_PALETTE live in
-   pixelSpriteAssets.js (WarpOverlay reuses the same sprite for its burst). */
+   STAR/STAR_PALETTE live in pixelSpriteAssets.js (shared with WarpOverlay). */
 
 // Each star twinkles on its own clock so the cluster shimmers rather than
 // pulsing as one block.

@@ -1,8 +1,7 @@
 import PixelArt from './PixelArt'
 
-// The firing turret on the loading screen: pixel gun, muzzle flash, bullet
-// tracers and debris sparks. Everything animates continuously via CSS keyframes
-// (see index.css) with staggered delays, so nothing on the overlay sits still.
+// Firing turret on the loading screen: gun, muzzle flash, tracers, debris.
+// Animates via CSS keyframes (index.css) with staggered delays.
 
 const TURRET = [
   '....K...................',
@@ -67,8 +66,7 @@ function TurretSprite() {
     <div className="relative" style={{ width: 24 * SCALE, height: 20 * SCALE }}>
       <PixelArt rows={TURRET} palette={TURRET_PALETTE} scale={SCALE} outline="#080b12" />
 
-      {/* Everything below is anchored to the barrel tip. Overflow is allowed —
-          the tracers deliberately fly past the panel edge, as in the reference. */}
+      {/* Anchored to barrel tip; tracers deliberately overflow the panel edge. */}
       <div className="absolute" style={{ left: MUZZLE_X, top: MUZZLE_Y }}>
         {/* bullet tracers */}
         {TRACERS.map((t, i) => (

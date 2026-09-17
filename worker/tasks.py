@@ -56,14 +56,8 @@ twilio = Client(
             notification_settings.TWILIO_SID, notification_settings.TWILIO_AUTH_TOKEN
 )
 
-# Statuses where trying the same request again can plausibly succeed: Twilio
-# rate-limiting us, or Twilio itself being unhealthy.
-#
-# Everything else is permanent for this message — 401/403 means the credentials
-# are wrong (error 20003), 400 means the request is malformed, 21211 an invalid
-# recipient, 21608 an unverified number on a trial account. None of those change
-# on the tenth attempt, so retrying just buries the real cause under a pile of
-# identical failures and delays the log line that explains it.
+# Retryable = rate-limit/Twilio outage. Everything else (bad creds, malformed
+# request, invalid/unverified number) is permanent — retrying just hides the cause.
 _RETRYABLE_STATUSES = {429, 500, 502, 503, 504}
 
 
@@ -81,10 +75,8 @@ def send_sms(self, to: str, body: str):
         )
     except TwilioRestException as exc:
         if exc.status not in _RETRYABLE_STATUSES:
-            # Swallowed on purpose: re-raising would mark the task FAILED and
-            # retry it under Celery's default policy for no benefit. The
-            # delivery code still reaches the customer by email, which is why
-            # this is survivable at all — see ShipmentEventService._notify.
+            # Swallowed: no benefit to retrying, and the OTP still reaches the
+            # customer by email (see ShipmentEventService._notify).
             print(
                 f"[sms] permanent failure for {to}: "
                 f"HTTP {exc.status} twilio_code={exc.code} {exc.msg}"

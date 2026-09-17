@@ -14,11 +14,8 @@ class ShipmentEvent(SQLModel, table=True):
     __tablename__ = "shipment_event"
     id: UUID = Field(
         default_factory=uuid4,
-        # `default=uuid4` — the function, not `uuid4()`, which every other table
-        # here gets right. Calling it evaluated one UUID at import time and made
-        # it the column default for the whole process, so any insert that fell
-        # back to the column default (rather than the model's default_factory)
-        # would collide on the primary key with every other such insert.
+        # Must be `default=uuid4` (the function), not `uuid4()` — else every
+        # fallback insert reuses the same id.
         sa_column=Column(
             postgresql.UUID(as_uuid=True), primary_key=True, default=uuid4
         ),

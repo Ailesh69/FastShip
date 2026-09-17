@@ -1,8 +1,8 @@
 import { createContext, useContext } from 'react'
 
-// Context, hook and progress maths for the route-transition loading screen.
-// Kept separate from the provider component so that file can export only a
-// component (React Fast Refresh requires that split).
+// Context, hook, and progress maths for the route-transition loading screen.
+// Split from the provider component for Fast Refresh (that file must export
+// only a component).
 
 export const LoadingNavContext = createContext(null)
 
@@ -16,12 +16,9 @@ export const MIN_MS = 2000
 export const MAX_MS = 3000
 export const FADE_MS = 260
 
-// Warp transition (the fast alternate to the turret loader): a diagonal
-// pixel-tile wave wipes in to cover the screen, then wipes back out to
-// reveal the destination. Two phases, cover then reveal — fixed total,
-// unlike the turret's randomised 2-3s. The route swap happens once the wave
-// has fully covered the screen (WARP_SWAP_MS), same moment WarpOverlay's own
-// canvas animation flips from covering to revealing.
+// Warp transition (fast alternate to turret loader): diagonal tile wave
+// covers then reveals, fixed duration unlike turret's random 2-3s. Route
+// swaps at WARP_SWAP_MS, when the wave fully covers the screen.
 export const WARP_COVER_MS = 667
 export const WARP_REVEAL_MS = 667
 export const WARP_MS = WARP_COVER_MS + WARP_REVEAL_MS
@@ -38,9 +35,8 @@ export function subtitleFor(path) {
   return DATA_LINKS[path] ?? 'ESTABLISHING CONNECTION...'
 }
 
-// Control points as [fraction of duration, percent]. Deliberately uneven: two
-// quick jumps early, short plateaus, a long stall across the 60–80% band, then
-// a fast run to 100% — so it reads as real work rather than a linear sweep.
+// [fraction of duration, percent] points. Uneven on purpose (early jumps,
+// long stall at 60-80%, fast finish) so it reads as real work, not a sweep.
 const BASE_CURVE = [
   [0, 0],
   [0.05, 17],
@@ -55,8 +51,7 @@ const BASE_CURVE = [
   [1, 100],
 ]
 
-// Nudge the interior control points a little on every run so no two loads
-// stall in exactly the same place.
+// Nudge interior points each run so no two loads stall identically.
 export function jitteredCurve() {
   const last = BASE_CURVE.length - 1
   let prevP = 0

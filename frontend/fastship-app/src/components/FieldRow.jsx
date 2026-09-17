@@ -1,9 +1,6 @@
-// One bordered input row: pixel icon well on the left, label + input on the
-// right, and an inline validation message underneath.
-//
-// Shared by every form on the site (all three sign-up roles and the login
-// page) so field height, border, icon size and error styling can only ever be
-// changed in one place. Styling lives in .field-box / .field-error in index.css.
+// One bordered input row: icon well, label + input, inline error underneath.
+// Shared by every form (sign-up roles + login) so styling stays in one place.
+// See .field-box / .field-error in index.css.
 function FieldRow({
   name,
   label,
