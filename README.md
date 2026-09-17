@@ -463,7 +463,8 @@ Type: **Press Start 2P** (UI) and **VT323** (terminal), SIL OFL, shipped under `
 - Delivery confirmation uses `hmac.compare_digest` against Redis; missing OTP is a failed check, not the string `"None"`.
 - Twilio send retries only on 429 / 5xx. Auth and invalid-number errors are not retried.
 - Passwords are bcrypt (72-byte truncate, matching historical passlib hashes).
-
+Note: Email/SMS notifications require a Celery worker. 
+Run locally with `celery -A worker.tasks worker` for full functionality.
 ---
 
 ## License
