@@ -343,6 +343,9 @@ In another terminal, the worker (required for mail, SMS, and queued access logs)
 celery -A worker.tasks worker --loglevel=info
 ```
 
+> **Note:** Email/SMS notifications require a Celery worker.
+> Run locally with `celery -A worker.tasks worker` for full functionality.
+
 Schema: the API calls `create_all` on boot. For an existing database, use Alembic:
 
 ```bash
